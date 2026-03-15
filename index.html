@@ -591,7 +591,6 @@
     height: 1px;
     background: rgba(201,146,42,0.2);
   }
-
   @media (max-width: 500px) {
     :root { --card-w: 340px; --card-h: 240px; }
     .card-chinese { font-size: 40px; }
@@ -609,7 +608,6 @@
     <h1><span class="cn">汉字卡</span> · Hànzì Cards</h1>
     <p>Describe any Chinese language topic — get an instant flashcard deck</p>
   </header>
-
   <!-- Generator -->
   <div class="generator">
     <label>Topic or Theme</label>
@@ -642,6 +640,7 @@
 
 <script>
 let cards = [];
+
 let currentIndex = 0;
 let isFlipped = false;
 let mode = 'vocab';
