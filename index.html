@@ -696,12 +696,9 @@ Return ONLY a valid JSON array (no markdown, no explanation). Each object must h
 Ensure variety in difficulty and coverage of the topic. Make cards genuinely useful for language learning.`;
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch('https://chinese-flashcard-proxy.jason-liang-roblox.workers.dev/', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4096,
