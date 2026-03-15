@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>汉字卡 · Hànzì Cards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1208;
+    --rice: #f7f2e8;
+    --parchment: #efe8d6;
+    --vermillion: #c0392b;
+    --gold: #c9922a;
+    --gold-light: #e8c06a;
+    --jade: #2e7d5e;
+    --jade-light: #4aad87;
+    --shadow: rgba(26,18,8,0.15);
+    --card-w: 420px;
+    --card-h: 280px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--rice);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background texture */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(ellipse 80% 60% at 10% 10%, rgba(201,146,42,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 90% 80%, rgba(192,57,43,0.07) 0%, transparent 60%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c9922a' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 24px 60px;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--vermillion);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 2px;
+    margin-bottom: 14px;
+  }
+
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--ink);
+  }
+
+  header h1 .cn {
+    font-family: 'Noto Serif SC', serif;
+    color: var(--vermillion);
+  }
+
+  header p {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #6b5a40;
+    font-weight: 300;
+  }
+
+  /* Generator Panel */
+  .generator {
+    background: #fff;
+    border: 1px solid rgba(201,146,42,0.3);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 40px;
+    box-shadow: 0 4px 24px var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .generator::before {
+    content: '生成';
+    position: absolute;
+    top: -12px; right: 20px;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 64px;
+    font-weight: 700;
+    color: rgba(201,146,42,0.06);
+    pointer-events: none;
+  }
+
+  .generator label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 10px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .generator input {
+    flex: 1;
+    background: var(--rice);
+    border: 1.5px solid rgba(201,146,42,0.25);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .generator input:focus { border-color: var(--gold); }
+  .generator input::placeholder { color: #b0a080; }
+
+  .mode-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .mode-tab {
+    padding: 7px 16px;
+    border: 1.5px solid rgba(201,146,42,0.3);
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    background: transparent;
+    color: #6b5a40;
+    transition: all 0.2s;
+  }
+
+  .mode-tab.active {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #fff;
+  }
+
+  .btn-generate {
+    background: var(--vermillion);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-generate:hover { background: #a93226; transform: translateY(-1px); }
+  .btn-generate:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  .btn-generate.loading .spinner { display: block; }
+  .btn-generate.loading .btn-text { display: none; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Deck Controls */
+  .deck-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .deck-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .deck-meta {
+    font-size: 13px;
+    color: #6b5a40;
+    margin-top: 2px;
+  }
+
+  .nav-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .btn-nav {
+    width: 40px; height: 40px;
+    border: 1.5px solid rgba(201,146,42,0.4);
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    color: var(--ink);
+  }
+
+  .btn-nav:hover { background: var(--gold); color: #fff; border-color: var(--gold); }
+  .btn-nav:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .progress-text {
+    font-size: 14px;
+    font-weight: 500;
+    color: #6b5a40;
+    min-width: 60px;
+    text-align: center;
+  }
+
+  /* Card Stage */
+  .card-stage {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 320px;
+    perspective: 1200px;
+    margin-bottom: 20px;
+  }
+
+  .card-wrapper {
+    width: var(--card-w);
+    height: var(--card-h);
+    position: relative;
+    cursor: pointer;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-wrapper.flipped { transform: rotateY(180deg); }
+
+  .card-face {
+    position: absolute; inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    padding: 32px;
+    box-shadow:
+      0 10px 40px rgba(26,18,8,0.12),
+      0 2px 8px rgba(26,18,8,0.08),
+      inset 0 1px 0 rgba(255,255,255,0.8);
+  }
+
+  /* Front face */
+  .card-front {
+    background: #fff;
+    border: 1px solid rgba(201,146,42,0.2);
+  }
+
+  .card-front::after {
+    content: '';
+    position: absolute;
+    top: 12px; left: 12px; right: 12px; bottom: 12px;
+    border: 1px solid rgba(201,146,42,0.15);
+    border-radius: 10px;
+    pointer-events: none;
+  }
+
+  /* Corner decorations */
+  .card-front::before {
+    content: '◈';
+    position: absolute;
+    top: 20px; left: 20px;
+    font-size: 12px;
+    color: rgba(201,146,42,0.3);
+  }
+
+  /* Back face */
+  .card-back {
+    background: linear-gradient(145deg, #2a1a0a 0%, #1a0e05 100%);
+    transform: rotateY(180deg);
+    border: 1px solid rgba(201,146,42,0.3);
+  }
+
+  .card-back::before {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 16px;
+    background: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23c9922a' fill-opacity='0.06'%3E%3Cpath d='M20 20h20v20H20zM0 0h20v20H0z'/%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+
+  /* Card Content */
+  .card-tag {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .card-front .card-tag { color: var(--gold); }
+  .card-back .card-tag { color: var(--gold-light); opacity: 0.7; }
+
+  .card-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .card-chinese {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 52px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+  }
+
+  .card-pinyin {
+    font-size: 18px;
+    color: var(--vermillion);
+    font-style: italic;
+    font-family: 'Playfair Display', serif;
+    letter-spacing: 0.05em;
+  }
+
+  .card-question {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+
+  .card-hint {
+    font-size: 13px;
+    color: #6b5a40;
+    margin-top: 6px;
+    font-style: italic;
+  }
+
+  /* Back content */
+  .card-back .card-chinese {
+    color: var(--gold-light);
+    font-size: 42px;
+  }
+
+  .card-back .card-pinyin {
+    color: #c9922a;
+  }
+
+  .card-answer {
+    font-size: 16px;
+    color: rgba(247,242,232,0.85);
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  .card-english {
+    font-size: 20px;
+    font-weight: 500;
+    color: #fff;
+    line-height: 1.3;
+  }
+
+  .card-example {
+    font-size: 13px;
+    color: rgba(201,146,42,0.7);
+    font-style: italic;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(201,146,42,0.2);
+  }
+
+  .flip-hint {
+    text-align: center;
+    font-size: 12px;
+    color: #a09070;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 28px;
+    letter-spacing: 0.05em;
+  }
+
+  .flip-hint svg { opacity: 0.6; }
+
+  /* Progress bar */
+  .progress-bar {
+    height: 3px;
+    background: rgba(201,146,42,0.15);
+    border-radius: 2px;
+    margin-bottom: 32px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--vermillion), var(--gold));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  /* Mini deck grid */
+  .deck-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+    margin-top: 32px;
+  }
+
+  .mini-card {
+    background: #fff;
+    border: 1.5px solid rgba(201,146,42,0.2);
+    border-radius: 8px;
+    padding: 14px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .mini-card:hover {
+    border-color: var(--gold);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(201,146,42,0.15);
+  }
+
+  .mini-card.active {
+    border-color: var(--vermillion);
+    background: rgba(192,57,43,0.04);
+  }
+
+  .mini-card.known::after {
+    content: '✓';
+    position: absolute;
+    top: 4px; right: 6px;
+    font-size: 10px;
+    color: var(--jade);
+  }
+
+  .mini-cn {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .mini-pinyin {
+    font-size: 11px;
+    color: var(--vermillion);
+    font-style: italic;
+  }
+
+  /* Bottom actions */
+  .card-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .btn-action {
+    padding: 9px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1.5px solid;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-known {
+    border-color: var(--jade);
+    color: var(--jade);
+    background: transparent;
+  }
+
+  .btn-known:hover { background: var(--jade); color: #fff; }
+
+  .btn-review {
+    border-color: var(--vermillion);
+    color: var(--vermillion);
+    background: transparent;
+  }
+
+  .btn-review:hover { background: var(--vermillion); color: #fff; }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #a09070;
+  }
+
+  .empty-state .big-char {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 80px;
+    opacity: 0.15;
+    color: var(--gold);
+    display: block;
+    margin-bottom: 16px;
+  }
+
+  .empty-state p { font-size: 15px; line-height: 1.6; }
+
+  /* Status toast */
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    z-index: 100;
+    white-space: nowrap;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Section divider */
+  .section-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 36px 0 20px;
+    color: #a09070;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .section-divider::before, .section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(201,146,42,0.2);
+  }
+
+  @media (max-width: 500px) {
+    :root { --card-w: 340px; --card-h: 240px; }
+    .card-chinese { font-size: 40px; }
+    .input-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="header-badge">
+      <span>✦</span> AI-Powered
+    </div>
+    <h1><span class="cn">汉字卡</span> · Hànzì Cards</h1>
+    <p>Describe any Chinese language topic — get an instant flashcard deck</p>
+  </header>
+
+  <!-- Generator -->
+  <div class="generator">
+    <label>Topic or Theme</label>
+    <div class="mode-tabs" id="modeTabs">
+      <button class="mode-tab active" data-mode="vocab">Vocabulary</button>
+      <button class="mode-tab" data-mode="qa">Q&A</button>
+      <button class="mode-tab" data-mode="phrases">Phrases</button>
+      <button class="mode-tab" data-mode="grammar">Grammar</button>
+    </div>
+    <div class="input-row">
+      <input type="text" id="topicInput" placeholder='e.g. "restaurant ordering", "HSK 2 emotions", "family members"…' />
+      <button class="btn-generate" id="generateBtn" onclick="generateCards()">
+        <span class="btn-text">生成 Generate</span>
+        <div class="spinner"></div>
+      </button>
+    </div>
+  </div>
+
+  <!-- Deck -->
+  <div id="deckArea">
+    <div class="empty-state">
+      <span class="big-char">学</span>
+      <p>Enter a topic above and click <strong>Generate</strong><br>to create your personalized flashcard deck.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let cards = [];
+let currentIndex = 0;
+let isFlipped = false;
+let mode = 'vocab';
+let knownSet = new Set();
+
+// Mode tabs
+document.querySelectorAll('.mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    mode = tab.dataset.mode;
+  });
+});
+
+// Enter key
+document.getElementById('topicInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') generateCards();
+});
+
+function showToast(msg, duration = 2000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+async function generateCards() {
+  const topic = document.getElementById('topicInput').value.trim();
+  if (!topic) { showToast('Please enter a topic first'); return; }
+
+  const btn = document.getElementById('generateBtn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  const modeInstructions = {
+    vocab: 'vocabulary flashcards with Chinese characters, pinyin, English meaning, and a usage example',
+    qa: 'question-and-answer flashcards testing understanding of Chinese language concepts',
+    phrases: 'common phrase flashcards with Chinese, pinyin, English translation, and context',
+    grammar: 'grammar pattern flashcards explaining Chinese grammar structures with examples'
+  };
+
+  const prompt = `Create exactly 8 Chinese language ${modeInstructions[mode]} about the topic: "${topic}".
+
+Return ONLY a valid JSON array (no markdown, no explanation). Each object must have:
+- "front_chinese": Chinese characters (the term, phrase, or question)
+- "front_pinyin": pinyin with tone marks
+- "front_hint": a brief English hint or sub-label (5 words max)
+- "back_english": English translation or answer (concise)
+- "back_explanation": fuller explanation, usage notes, or example sentence (1-2 sentences)
+- "back_example": a short Chinese example sentence with pinyin (or empty string if grammar card)
+- "type": one of "vocab", "phrase", "qa", or "grammar"
+
+Ensure variety in difficulty and coverage of the topic. Make cards genuinely useful for language learning.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4096,
+        system: 'You are a Chinese language flashcard generator. You must respond with ONLY a valid JSON array — no preamble, no explanation, no markdown code fences, no trailing text. Just the raw JSON array starting with [ and ending with ].',
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await resp.json();
+
+    if (data.error) throw new Error(data.error.message || 'API error');
+
+    const raw = data.content.map(b => b.text || '').join('');
+
+    // Robustly extract the JSON array from anywhere in the response
+    const match = raw.match(/\[[\s\S]*\]/);
+    if (!match) throw new Error('No JSON array found in response');
+    const parsed = JSON.parse(match[0]);
+
+    if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('Invalid response');
+
+    cards = parsed;
+    currentIndex = 0;
+    isFlipped = false;
+    knownSet.clear();
+    renderDeck();
+    showToast(`✦ ${cards.length} cards generated`);
+
+  } catch (err) {
+    console.error(err);
+    showToast('Generation failed — ' + err.message, 3500);
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+function renderDeck() {
+  if (!cards.length) return;
+  const area = document.getElementById('deckArea');
+
+  area.innerHTML = `
+    <div class="deck-header">
+      <div>
+        <div class="deck-title">${escapeHtml(document.getElementById('topicInput').value)}</div>
+        <div class="deck-meta">${cards.length} cards · ${mode} mode</div>
+      </div>
+      <div class="nav-controls">
+        <button class="btn-nav" id="prevBtn" onclick="navigate(-1)">‹</button>
+        <span class="progress-text" id="progressText"></span>
+        <button class="btn-nav" id="nextBtn" onclick="navigate(1)">›</button>
+      </div>
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="card-stage">
+      <div class="card-wrapper" id="cardWrapper" onclick="flipCard()">
+        <div class="card-face card-front" id="cardFront"></div>
+        <div class="card-face card-back" id="cardBack"></div>
+      </div>
+    </div>
+
+    <div class="flip-hint">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/>
+      </svg>
+      Click card to flip
+    </div>
+
+    <div class="card-actions">
+      <button class="btn-action btn-known" onclick="markCard(true)">✓ Got it</button>
+      <button class="btn-action btn-review" onclick="markCard(false)">↺ Review again</button>
+    </div>
+
+    <div class="section-divider">All Cards</div>
+
+    <div class="deck-grid" id="deckGrid"></div>
+  `;
+
+  updateCard();
+  renderGrid();
+}
+
+function updateCard() {
+  if (!cards.length) return;
+  const card = cards[currentIndex];
+  isFlipped = false;
+
+  const wrapper = document.getElementById('cardWrapper');
+  wrapper.classList.remove('flipped');
+
+  // Front
+  const front = document.getElementById('cardFront');
+  front.innerHTML = `
+    <div class="card-tag">${card.type || mode} · card ${currentIndex + 1}</div>
+    <div class="card-main">
+      <div class="card-chinese">${escapeHtml(card.front_chinese)}</div>
+      <div class="card-pinyin">${escapeHtml(card.front_pinyin)}</div>
+      ${card.front_hint ? `<div class="card-hint">${escapeHtml(card.front_hint)}</div>` : ''}
+    </div>
+  `;
+
+  // Back
+  const back = document.getElementById('cardBack');
+  back.innerHTML = `
+    <div class="card-tag">Answer</div>
+    <div class="card-main">
+      <div class="card-chinese">${escapeHtml(card.front_chinese)}</div>
+      <div class="card-pinyin">${escapeHtml(card.front_pinyin)}</div>
+      <div class="card-english">${escapeHtml(card.back_english)}</div>
+      ${card.back_explanation ? `<div class="card-answer">${escapeHtml(card.back_explanation)}</div>` : ''}
+      ${card.back_example ? `<div class="card-example">${escapeHtml(card.back_example)}</div>` : ''}
+    </div>
+  `;
+
+  // Progress
+  document.getElementById('progressText').textContent = `${currentIndex + 1} / ${cards.length}`;
+  document.getElementById('progressFill').style.width = `${((currentIndex + 1) / cards.length) * 100}%`;
+  document.getElementById('prevBtn').disabled = currentIndex === 0;
+  document.getElementById('nextBtn').disabled = currentIndex === cards.length - 1;
+
+  // Highlight grid
+  document.querySelectorAll('.mini-card').forEach((el, i) => {
+    el.classList.toggle('active', i === currentIndex);
+  });
+}
+
+function flipCard() {
+  isFlipped = !isFlipped;
+  document.getElementById('cardWrapper').classList.toggle('flipped', isFlipped);
+}
+
+function navigate(dir) {
+  const next = currentIndex + dir;
+  if (next < 0 || next >= cards.length) return;
+  currentIndex = next;
+  updateCard();
+}
+
+function markCard(known) {
+  if (known) {
+    knownSet.add(currentIndex);
+    showToast('Marked as known ✓');
+  } else {
+    knownSet.delete(currentIndex);
+    showToast('Added to review list');
+  }
+  renderGrid();
+  if (currentIndex < cards.length - 1) {
+    setTimeout(() => navigate(1), 300);
+  }
+}
+
+function renderGrid() {
+  const grid = document.getElementById('deckGrid');
+  if (!grid) return;
+  grid.innerHTML = cards.map((c, i) => `
+    <div class="mini-card ${i === currentIndex ? 'active' : ''} ${knownSet.has(i) ? 'known' : ''}"
+         onclick="jumpTo(${i})">
+      <span class="mini-cn">${escapeHtml(c.front_chinese)}</span>
+      <div class="mini-pinyin">${escapeHtml(c.front_pinyin)}</div>
+    </div>
+  `).join('');
+}
+
+function jumpTo(i) {
+  currentIndex = i;
+  isFlipped = false;
+  updateCard();
+  renderGrid();
+  document.querySelector('.card-stage').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', e => {
+  if (!cards.length) return;
+  if (e.key === 'ArrowLeft') navigate(-1);
+  else if (e.key === 'ArrowRight') navigate(1);
+  else if (e.key === ' ') { e.preventDefault(); flipCard(); }
+  else if (e.key === 'k' || e.key === 'K') markCard(true);
+  else if (e.key === 'r' || e.key === 'R') markCard(false);
+});
+</script>
+</body>
+</html>
