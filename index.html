@@ -258,7 +258,7 @@
   .card-stage {
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     min-height: 320px;
     perspective: 1200px;
     margin-bottom: 20px;
@@ -266,7 +266,8 @@
 
   .card-wrapper {
     width: var(--card-w);
-    height: var(--card-h);
+    min-height: var(--card-h);
+    height: auto;
     position: relative;
     cursor: pointer;
     transform-style: preserve-3d;
@@ -282,11 +283,17 @@
     border-radius: 16px;
     display: flex;
     flex-direction: column;
-    padding: 32px;
+    padding: 24px 28px;
     box-shadow:
       0 10px 40px rgba(26,18,8,0.12),
       0 2px 8px rgba(26,18,8,0.08),
       inset 0 1px 0 rgba(255,255,255,0.8);
+    overflow: hidden;
+  }
+  
+  .card-back .card-main {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Front face */
@@ -391,10 +398,11 @@
   }
 
   .card-answer {
-    font-size: 16px;
+    font-size: 14px;
     color: rgba(247,242,232,0.85);
-    line-height: 1.6;
+    line-height: 1.5;
     font-weight: 300;
+    margin-top: 4px;
   }
 
   .card-english {
@@ -405,12 +413,13 @@
   }
 
   .card-example {
-    font-size: 13px;
+    font-size: 12px;
     color: rgba(201,146,42,0.7);
     font-style: italic;
-    margin-top: 8px;
-    padding-top: 8px;
+    margin-top: 6px;
+    padding-top: 6px;
     border-top: 1px solid rgba(201,146,42,0.2);
+    flex-shrink: 0;
   }
 
   .flip-hint {
@@ -592,8 +601,13 @@
     background: rgba(201,146,42,0.2);
   }
   @media (max-width: 500px) {
-    :root { --card-w: 340px; --card-h: 240px; }
-    .card-chinese { font-size: 40px; }
+    :root { --card-w: 320px; --card-h: 260px; }
+    .card-chinese { font-size: 38px; }
+    .card-back .card-chinese { font-size: 30px; }
+    .card-english { font-size: 17px; }
+    .card-answer { font-size: 13px; }
+    .card-example { font-size: 11px; }
+    .card-face { padding: 20px; }
     .input-row { flex-direction: column; }
   }
 </style>
