@@ -874,25 +874,82 @@
   .btn-audio.playing { background: var(--gold); color: #fff; }
 
   /* HSK quick-picks */
+  /* Quick Generate */
+  .quick-generate {
+    margin-top: 12px;
+    padding: 14px 18px;
+    background: rgba(201,146,42,0.06);
+    border: 1px dashed rgba(201,146,42,0.3);
+    border-radius: 10px;
+  }
+  .quick-generate-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
   .hsk-row {
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
-    margin-top: 10px;
   }
   .hsk-chip {
-    padding: 4px 12px;
-    border: 1.5px solid rgba(201,146,42,0.25);
-    border-radius: 14px;
-    font-size: 11px;
+    padding: 5px 13px;
+    border: 1.5px solid rgba(201,146,42,0.3);
+    border-radius: 6px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    background: transparent;
+    background: #fff;
     color: #6b5a40;
     transition: all 0.18s;
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 5px;
   }
-  .hsk-chip:hover { background: var(--gold); color: #fff; border-color: var(--gold); }
+  .hsk-chip:hover { background: var(--gold); color: #fff; border-color: var(--gold); transform: translateY(-1px); }
+  .hsk-chip .chip-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.5;
+    flex-shrink: 0;
+  }
+
+  /* Voice selector */
+  .voice-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(201,146,42,0.15);
+  }
+  .voice-label {
+    font-size: 11px;
+    color: #a09070;
+    white-space: nowrap;
+  }
+  .voice-select {
+    flex: 1;
+    background: var(--rice);
+    border: 1.5px solid rgba(201,146,42,0.25);
+    border-radius: 7px;
+    padding: 5px 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: var(--ink);
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .voice-select:focus { border-color: var(--gold); }
 
   /* Session History */
   .history-section {
@@ -999,14 +1056,24 @@
         <div class="spinner"></div>
       </button>
     </div>
+  </div>
+
+  <!-- Quick Generate -->
+  <div class="quick-generate">
+    <div class="quick-generate-label">⚡ Quick Generate by difficulty</div>
     <div class="hsk-row">
-      <span style="font-size:11px;color:#a09070;align-self:center;">Level:</span>
-      <button class="hsk-chip" onclick="setHSK(1)">Beginner</button>
-      <button class="hsk-chip" onclick="setHSK(2)">Elementary</button>
-      <button class="hsk-chip" onclick="setHSK(3)">Intermediate</button>
-      <button class="hsk-chip" onclick="setHSK(4)">Advanced</button>
-      <button class="hsk-chip" onclick="setHSK(5)">Fluent</button>
-      <button class="hsk-chip" onclick="setHSK(6)">Master</button>
+      <button class="hsk-chip" onclick="setHSK(1)"><span class="chip-dot"></span>Beginner</button>
+      <button class="hsk-chip" onclick="setHSK(2)"><span class="chip-dot"></span>Elementary</button>
+      <button class="hsk-chip" onclick="setHSK(3)"><span class="chip-dot"></span>Intermediate</button>
+      <button class="hsk-chip" onclick="setHSK(4)"><span class="chip-dot"></span>Advanced</button>
+      <button class="hsk-chip" onclick="setHSK(5)"><span class="chip-dot"></span>Fluent</button>
+      <button class="hsk-chip" onclick="setHSK(6)"><span class="chip-dot"></span>Master</button>
+    </div>
+    <div class="voice-selector">
+      <span class="voice-label">🔊 Voice:</span>
+      <select class="voice-select" id="voiceSelect" onchange="onVoiceChange()">
+        <option value="">Loading voices…</option>
+      </select>
     </div>
   </div>
 
@@ -1287,17 +1354,47 @@ function setHSK(level) {
 }
 
 // ── Audio Pronunciation ──────────────────────────────────────────────────────
+let selectedVoice = null;
+
+function populateVoices() {
+  if (!('speechSynthesis' in window)) return;
+  const voices = window.speechSynthesis.getVoices();
+  const cnVoices = voices.filter(v => v.lang.startsWith('zh') || v.lang.startsWith('cmn'));
+  const sel = document.getElementById('voiceSelect');
+  if (!sel) return;
+
+  if (cnVoices.length === 0) {
+    sel.innerHTML = '<option value="">No Chinese voices found</option>';
+    return;
+  }
+
+  const saved = localStorage.getItem('hanzi_voice');
+  sel.innerHTML = cnVoices.map((v, i) =>
+    `<option value="${i}" ${saved === v.name ? 'selected' : ''}>${v.name} (${v.lang})</option>`
+  ).join('');
+
+  // Restore saved voice or default to first
+  const savedIdx = cnVoices.findIndex(v => v.name === saved);
+  selectedVoice = cnVoices[savedIdx >= 0 ? savedIdx : 0];
+}
+
+function onVoiceChange() {
+  const sel = document.getElementById('voiceSelect');
+  const voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('zh') || v.lang.startsWith('cmn'));
+  selectedVoice = voices[parseInt(sel.value)] || null;
+  if (selectedVoice) {
+    localStorage.setItem('hanzi_voice', selectedVoice.name);
+    speakChinese('你好');
+  }
+}
+
 function speakChinese(text) {
   if (!('speechSynthesis' in window)) { showToast('Audio not supported on this browser'); return; }
   window.speechSynthesis.cancel();
   const utt = new SpeechSynthesisUtterance(text);
   utt.lang = 'zh-CN';
   utt.rate = 0.85;
-
-  // Find a Chinese voice if available
-  const voices = window.speechSynthesis.getVoices();
-  const cnVoice = voices.find(v => v.lang.startsWith('zh'));
-  if (cnVoice) utt.voice = cnVoice;
+  if (selectedVoice) utt.voice = selectedVoice;
 
   const btn = document.getElementById('audioBtn');
   if (btn) btn.classList.add('playing');
@@ -1308,7 +1405,10 @@ function speakChinese(text) {
 // Preload voices
 if ('speechSynthesis' in window) {
   window.speechSynthesis.getVoices();
-  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => {
+    populateVoices();
+  };
+  setTimeout(populateVoices, 200);
 }
 
 // ── Session History ──────────────────────────────────────────────────────────
@@ -1564,7 +1664,10 @@ function showMatchComplete(elapsed) {
 }
 
 // Init history on page load
-document.addEventListener('DOMContentLoaded', renderHistory);
+document.addEventListener('DOMContentLoaded', () => {
+  renderHistory();
+  populateVoices();
+});
 
 // Keyboard navigation
 document.addEventListener('keydown', e => {
