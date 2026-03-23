@@ -1661,6 +1661,96 @@
     .progress-grid { grid-template-columns: 1fr 1fr; }
     .share-bar { flex-wrap: wrap; }
   }
+  /* Streak Calendar Popup */
+  .streak-popup {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    background: #fff;
+    border: 1.5px solid rgba(201,146,42,0.25);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 8px 32px rgba(26,18,8,0.15);
+    z-index: 999;
+    min-width: 220px;
+    display: none;
+  }
+  .streak-popup.open { display: block; }
+  .streak-popup-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .streak-popup-month {
+    font-size: 12px;
+    color: #6b5a40;
+    font-weight: 500;
+  }
+  .streak-cal {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .streak-cal-header {
+    font-size: 9px;
+    text-align: center;
+    color: #a09070;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding-bottom: 4px;
+  }
+  .streak-cal-day {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: #a09070;
+    margin: 0 auto;
+  }
+  .streak-cal-day.studied {
+    background: rgba(230,126,34,0.15);
+    color: #e67e22;
+    font-weight: 700;
+  }
+  .streak-cal-day.today {
+    border: 1.5px solid var(--gold);
+    color: var(--gold);
+    font-weight: 700;
+  }
+  .streak-cal-day.studied.today {
+    background: #e67e22;
+    color: #fff;
+    border: none;
+  }
+  .streak-cal-day.empty { visibility: hidden; }
+  .streak-summary {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(201,146,42,0.15);
+    font-size: 12px;
+    color: #6b5a40;
+    display: flex;
+    justify-content: space-between;
+  }
+  .streak-summary strong { color: var(--ink); }
+  body.dark .streak-popup {
+    background: #1e1a14;
+    border-color: rgba(201,146,42,0.2);
+  }
+  body.dark .streak-cal-day { color: #7a6a50; }
+
+  /* Make streak badge position:relative for popup anchoring */
+  .header-top-row { position: relative; }
+
 </style>
 </head>
 <body>
@@ -1668,8 +1758,9 @@
 
   <header>
     <div class="header-top-row">
-      <div id="streakBadge" class="streak-badge">
-        🔥 <span id="streakCount">0</span> Day Streak
+      <div id="streakBadge" class="streak-badge" onclick="toggleStreakPopup(event)" style="cursor:pointer;">
+        🔥 <span id="streakCount">0</span>
+        <div id="streakPopup" class="streak-popup" onclick="event.stopPropagation()"></div>
       </div>
       <div class="header-badge">
         <span>✦</span> AI-Powered
@@ -2936,6 +3027,82 @@ function launchConfetti() {
     else ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
   draw();
+}
+
+// ── Streak Calendar Popup ────────────────────────────────────────────────────
+function toggleStreakPopup(e) {
+  e.stopPropagation();
+  const popup = document.getElementById('streakPopup');
+  if (!popup) return;
+  const isOpen = popup.classList.contains('open');
+  if (isOpen) {
+    popup.classList.remove('open');
+  } else {
+    renderStreakCalendar();
+    popup.classList.add('open');
+  }
+}
+
+// Close popup when clicking outside
+document.addEventListener('click', () => {
+  const popup = document.getElementById('streakPopup');
+  if (popup) popup.classList.remove('open');
+});
+
+function renderStreakCalendar() {
+  const popup = document.getElementById('streakPopup');
+  if (!popup) return;
+
+  const dates = (() => {
+    try { return JSON.parse(localStorage.getItem('hanzi_study_dates') || '[]'); } catch { return []; }
+  })();
+  const studiedSet = new Set(dates.map(d => new Date(d).toDateString()));
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const today = now.toDateString();
+
+  const monthName = now.toLocaleString('default', { month: 'long' });
+  const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const streak = getStudyStreak();
+  const totalDays = studiedSet.size;
+
+  const dayHeaders = ['S','M','T','W','T','F','S'].map(d =>
+    `<div class="streak-cal-header">${d}</div>`
+  ).join('');
+
+  // Empty cells before first day
+  const emptyCells = Array(firstDay).fill('<div class="streak-cal-day empty"></div>').join('');
+
+  // Day cells
+  const dayCells = Array.from({ length: daysInMonth }, (_, i) => {
+    const d = i + 1;
+    const dateStr = new Date(year, month, d).toDateString();
+    const isToday = dateStr === today;
+    const isStudied = studiedSet.has(dateStr);
+    let cls = 'streak-cal-day';
+    if (isStudied) cls += ' studied';
+    if (isToday) cls += ' today';
+    return `<div class="${cls}">${d}</div>`;
+  }).join('');
+
+  popup.innerHTML = `
+    <div class="streak-popup-title">
+      <span>🔥 ${streak} Day Streak</span>
+      <span class="streak-popup-month">${monthName} ${year}</span>
+    </div>
+    <div class="streak-cal">
+      ${dayHeaders}
+      ${emptyCells}
+      ${dayCells}
+    </div>
+    <div class="streak-summary">
+      <span>Total study days</span>
+      <strong>${totalDays}</strong>
+    </div>
+  `;
 }
 
 // ── Dark Mode ────────────────────────────────────────────────────────────────
