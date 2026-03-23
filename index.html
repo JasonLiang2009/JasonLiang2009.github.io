@@ -1771,26 +1771,6 @@
     margin-bottom: 28px;
   }
 
-  .btn-mute {
-    position: absolute;
-    top: 14px;
-    right: 14px;
-    background: none;
-    border: 1.5px solid rgba(201,146,42,0.25);
-    border-radius: 20px;
-    padding: 4px 10px;
-    font-size: 12px;
-    cursor: pointer;
-    color: #a09070;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .btn-mute:hover { border-color: var(--gold); color: var(--gold); }
-  .btn-mute.muted { border-color: var(--vermillion); color: var(--vermillion); background: rgba(192,57,43,0.06); }
-  body.dark .btn-mute { background: none; }
-
   .btn-record {
     width: 72px; height: 72px;
     border-radius: 50%;
@@ -1899,6 +1879,146 @@
   body.dark .btn-record { background: #1e1a14; }
   body.dark .pronun-english { color: #a09070; }
 
+  /* ── Tutorial Overlay ── */
+  .tutorial-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(26,18,8,0.75);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+  }
+
+  .tutorial-box {
+    background: #fff;
+    border-radius: 20px;
+    padding: 32px 28px 24px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    position: relative;
+    animation: tutorialIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes tutorialIn {
+    from { opacity: 0; transform: scale(0.85) translateY(20px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  body.dark .tutorial-box {
+    background: #1e1a14;
+    border: 1.5px solid rgba(201,146,42,0.2);
+  }
+
+  .tutorial-step-indicator {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
+  .tutorial-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(201,146,42,0.2);
+    transition: all 0.2s;
+  }
+
+  .tutorial-dot.active {
+    background: var(--gold);
+    width: 24px;
+    border-radius: 4px;
+  }
+
+  .tutorial-icon {
+    font-size: 52px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .tutorial-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    text-align: center;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+
+  .tutorial-desc {
+    font-size: 14px;
+    color: #6b5a40;
+    text-align: center;
+    line-height: 1.6;
+    margin-bottom: 28px;
+  }
+
+  body.dark .tutorial-desc { color: #a09070; }
+
+  .tutorial-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .btn-tutorial-skip {
+    background: none;
+    border: none;
+    font-size: 13px;
+    color: #a09070;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: color 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-tutorial-skip:hover { color: var(--vermillion); }
+
+  .btn-tutorial-next {
+    flex: 1;
+    background: var(--vermillion);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-tutorial-next:hover { background: #a93226; }
+  .btn-tutorial-next.finish { background: var(--jade); }
+  .btn-tutorial-next.finish:hover { background: #256b4f; }
+
+  .tutorial-feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 20px;
+    text-align: left;
+  }
+
+  .tutorial-feature {
+    background: rgba(201,146,42,0.07);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: #6b5a40;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.3;
+  }
+
+  body.dark .tutorial-feature { background: rgba(201,146,42,0.08); color: #a09070; }
+  .tutorial-feature-icon { font-size: 18px; flex-shrink: 0; }
+
 </style>
 </head>
 <body>
@@ -2006,6 +2126,11 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- Tutorial Overlay -->
+<div class="tutorial-overlay" id="tutorialOverlay" style="display:none;">
+  <div class="tutorial-box" id="tutorialBox"></div>
+</div>
 
 <script>
 let cards = [];
@@ -3190,7 +3315,7 @@ function launchConfetti() {
 }
 
 // ── Pronunciation Mode ───────────────────────────────────────────────────────
-let pronunState = { index: 0, scores: [], recognition: null, isRecording: false, muted: false, scored: false };
+let pronunState = { index: 0, scores: [], recognition: null, isRecording: false, scored: false, silenceTimer: null };
 
 function renderPronunciationOnly() {
   const area = document.getElementById('deckArea');
@@ -3255,7 +3380,6 @@ function renderPronunCard() {
       <div class="pronun-pinyin card-pinyin">${escapeHtml(card.front_pinyin)}</div>
       <div class="pronun-english">${escapeHtml(card.back_english)}</div>
 
-      <button class="btn-mute" id="muteBtn" onclick="toggleMute()">🔔 Sound on</button>
       <button class="btn-record" id="recordBtn" onclick="startRecording()">🎤</button>
       <div class="pronun-status" id="pronunStatus">Tap to speak</div>
 
@@ -3267,14 +3391,9 @@ function renderPronunCard() {
     </div>
   `;
 
-  // Restore mute state
-  if (pronunState.muted) {
-    const btn = document.getElementById('muteBtn');
-    if (btn) { btn.textContent = '🔕 Muted'; btn.classList.add('muted'); }
-  }
 }
 
-function startRecording() {
+async function startRecording() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) return;
 
@@ -3290,9 +3409,20 @@ function startRecording() {
       pronunState.recognition.stop();
       pronunState.recognition = null;
     }
+    clearTimeout(pronunState.silenceTimer);
     pronunState.isRecording = false;
     if (btn) { btn.classList.remove('recording'); btn.textContent = '🎤'; }
     if (status) status.textContent = 'Tap to speak';
+    return;
+  }
+
+  // Request mic permission explicitly on desktop
+  try {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+    }
+  } catch(e) {
+    if (status) status.textContent = '🎙 Microphone access denied — check browser permissions';
     return;
   }
 
@@ -3307,34 +3437,70 @@ function startRecording() {
   pronunState.isRecording = true;
   rec.lang = 'zh-CN';
   rec.continuous = false;
-  rec.interimResults = false;
+  rec.interimResults = true; // enables interim so we know audio is being received
   rec.maxAlternatives = 5;
 
   if (btn) { btn.classList.add('recording'); btn.textContent = '⏹'; }
-  if (status) status.textContent = 'Listening…';
+  if (status) status.textContent = 'Listening… speak now';
+
+  // Silence timeout — if no speech after 6s, show hint
+  pronunState.silenceTimer = setTimeout(() => {
+    if (pronunState.isRecording) {
+      if (status) status.textContent = '🔇 No sound detected — check your microphone';
+    }
+  }, 6000);
+
+  let gotInterim = false;
 
   rec.onresult = (event) => {
-    pronunState.isRecording = false;
-    pronunState.recognition = null;
-    const results = Array.from(event.results[0]).map(r => r.transcript.trim());
-    scorePronunciation(results);
+    clearTimeout(pronunState.silenceTimer);
+    // Show interim results as feedback
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      if (!event.results[i].isFinal) {
+        gotInterim = true;
+        if (status) status.textContent = `Heard: ${event.results[i][0].transcript}`;
+      } else {
+        pronunState.isRecording = false;
+        pronunState.recognition = null;
+        const results = Array.from(event.results[i]).map(r => r.transcript.trim());
+        scorePronunciation(results);
+      }
+    }
   };
 
   rec.onerror = (e) => {
+    clearTimeout(pronunState.silenceTimer);
     pronunState.isRecording = false;
     pronunState.recognition = null;
     if (btn) { btn.classList.remove('recording'); btn.textContent = '🎤'; }
-    if (status) status.textContent = e.error === 'no-speech' ? 'No speech detected — try again' : 'Error: ' + e.error;
+    if (e.error === 'no-speech') {
+      if (status) status.textContent = '🔇 No speech heard — try speaking louder or closer';
+    } else if (e.error === 'not-allowed') {
+      if (status) status.textContent = '🎙 Microphone blocked — allow access in browser settings';
+    } else if (e.error === 'network') {
+      if (status) status.textContent = '🌐 Network error — speech recognition needs internet';
+    } else {
+      if (status) status.textContent = 'Error: ' + e.error + ' — try again';
+    }
   };
 
   rec.onend = () => {
+    clearTimeout(pronunState.silenceTimer);
     pronunState.isRecording = false;
     pronunState.recognition = null;
     if (btn) { btn.classList.remove('recording'); btn.textContent = '🎤'; }
-    if (status && status.textContent === 'Listening…') status.textContent = 'Tap to speak';
+    if (status && (status.textContent === 'Listening… speak now' || status.textContent.startsWith('Heard:'))) {
+      status.textContent = 'Tap to speak';
+    }
   };
 
-  rec.start();
+  try {
+    rec.start();
+  } catch(e) {
+    pronunState.isRecording = false;
+    if (status) status.textContent = 'Could not start — try again';
+    if (btn) { btn.classList.remove('recording'); btn.textContent = '🎤'; }
+  }
 }
 
 function scorePronunciation(transcripts) {
@@ -3382,19 +3548,6 @@ function scorePronunciation(transcripts) {
   showPronunResult(bestScore, bestHeard, card);
 }
 
-function toggleMute() {
-  pronunState.muted = !pronunState.muted;
-  const btn = document.getElementById('muteBtn');
-  if (!btn) return;
-  if (pronunState.muted) {
-    btn.textContent = '🔕 Muted';
-    btn.classList.add('muted');
-  } else {
-    btn.textContent = '🔔 Sound on';
-    btn.classList.remove('muted');
-  }
-}
-
 function showPronunResult(score, heard, card) {
   const result = document.getElementById('pronunResult');
   if (!result) return;
@@ -3431,10 +3584,7 @@ function showPronunResult(score, heard, card) {
     <div class="pronun-tip">${tip}</div>
   `;
 
-  // Play audio feedback unless muted
-  if (!pronunState.muted) {
-    speakChinese(card.front_chinese);
-  }
+  speakChinese(card.front_chinese);
 
   // Auto-advance after a moment
   setTimeout(() => {
@@ -3445,7 +3595,9 @@ function showPronunResult(score, heard, card) {
 }
 
 function skipPronun() {
+  clearTimeout(pronunState.silenceTimer);
   if (pronunState.recognition) pronunState.recognition.abort();
+  pronunState.isRecording = false;
   pronunState.index++;
   renderPronunCard();
 }
@@ -3473,6 +3625,117 @@ function renderPronunComplete() {
       <button class="btn-generate" style="margin:0 auto;display:flex;" onclick="renderPronunciationOnly()">↺ Try Again</button>
     </div>
   `;
+}
+
+// ── First-time Tutorial ──────────────────────────────────────────────────────
+const tutorialSteps = [
+  {
+    icon: '汉字卡',
+    iconStyle: 'font-family:"Noto Serif SC",serif;font-size:42px;color:var(--vermillion);',
+    title: 'Welcome to Hànzì Cards!',
+    desc: 'Your AI-powered Chinese flashcard app. Learn vocabulary, practice pronunciation, and track your progress — all for free.',
+    btn: 'Get Started →'
+  },
+  {
+    icon: '🎯',
+    title: 'Pick Your Mode',
+    desc: 'Choose from 8 study modes — Vocabulary, Q&A, Phrases, Grammar, Matching, Quiz, Sentences, and Pronunciation. Each one trains a different skill.',
+    features: [
+      { icon: '📚', text: 'Flip flashcards' },
+      { icon: '🧠', text: 'Multiple choice quiz' },
+      { icon: '🔗', text: 'Match pairs' },
+      { icon: '🎤', text: 'Speak & score' },
+    ],
+    btn: 'Next →'
+  },
+  {
+    icon: '⚡',
+    title: 'Generate Instantly',
+    desc: 'Type any topic — "restaurant ordering", "HSK emotions", "colors" — and tap Generate. Or use Quick Generate to pick a difficulty level.',
+    btn: 'Next →'
+  },
+  {
+    icon: '📷',
+    title: 'Scan Chinese Text',
+    desc: 'Tap the 📷 camera button to take a photo of any Chinese text — a menu, sign, or textbook — and generate cards from it instantly.',
+    btn: 'Next →'
+  },
+  {
+    icon: '🔥',
+    title: 'Build Your Streak',
+    desc: 'Study every day to build your streak. Tap the 🔥 badge to see your monthly calendar. Cards you mark "Got it" are tracked with spaced repetition.',
+    btn: 'Start Learning! 🚀',
+    finish: true
+  }
+];
+
+let tutorialStep = 0;
+
+function showTutorial() {
+  tutorialStep = 0;
+  document.getElementById('tutorialOverlay').style.display = 'flex';
+  renderTutorialStep();
+}
+
+function renderTutorialStep() {
+  const step = tutorialSteps[tutorialStep];
+  const box = document.getElementById('tutorialBox');
+  if (!box) return;
+
+  const dots = tutorialSteps.map((_, i) =>
+    `<div class="tutorial-dot ${i === tutorialStep ? 'active' : ''}"></div>`
+  ).join('');
+
+  const featuresHtml = step.features ? `
+    <div class="tutorial-feature-grid">
+      ${step.features.map(f => `
+        <div class="tutorial-feature">
+          <span class="tutorial-feature-icon">${f.icon}</span>
+          <span>${f.text}</span>
+        </div>
+      `).join('')}
+    </div>
+  ` : '';
+
+  box.innerHTML = `
+    <div class="tutorial-step-indicator">${dots}</div>
+    <div class="tutorial-icon" ${step.iconStyle ? `style="${step.iconStyle}"` : ''}>${step.icon}</div>
+    <div class="tutorial-title">${step.title}</div>
+    <div class="tutorial-desc">${step.desc}</div>
+    ${featuresHtml}
+    <div class="tutorial-actions">
+      ${!step.finish ? `<button class="btn-tutorial-skip" onclick="closeTutorial()">Skip</button>` : ''}
+      <button class="btn-tutorial-next ${step.finish ? 'finish' : ''}" onclick="nextTutorialStep()">
+        ${step.btn}
+      </button>
+    </div>
+  `;
+}
+
+function nextTutorialStep() {
+  tutorialStep++;
+  if (tutorialStep >= tutorialSteps.length) {
+    closeTutorial();
+  } else {
+    // Animate out then in
+    const box = document.getElementById('tutorialBox');
+    if (box) {
+      box.style.animation = 'none';
+      box.offsetHeight; // reflow
+      box.style.animation = 'tutorialIn 0.3s cubic-bezier(0.34,1.56,0.64,1)';
+    }
+    renderTutorialStep();
+  }
+}
+
+function closeTutorial() {
+  document.getElementById('tutorialOverlay').style.display = 'none';
+  localStorage.setItem('hanzi_tutorial_done', '1');
+}
+
+function initTutorial() {
+  const done = localStorage.getItem('hanzi_tutorial_done');
+  if (!done) showTutorial();
 }
 
 // ── Streak Calendar Popup ────────────────────────────────────────────────────
@@ -3576,6 +3839,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSharedDeck();
   recordStudyDate();
   updateProgressDashboard();
+  initTutorial();
 });
 
 // Keyboard navigation
