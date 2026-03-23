@@ -3295,37 +3295,44 @@ function startRecording() {
 
 function scorePronunciation(transcripts) {
   const card = cards[pronunState.index];
-  const target = card.front_chinese.trim();
-  const targetPinyin = card.front_pinyin.toLowerCase().replace(/[āáǎà]/g,'a').replace(/[ēéěè]/g,'e').replace(/[īíǐì]/g,'i').replace(/[ōóǒò]/g,'o').replace(/[ūúǔù]/g,'u').replace(/[ǖǘǚǜü]/g,'u').replace(/\s+/g,' ').trim();
+  // Normalize target: strip spaces so "生 气" matches "生气"
+  const target = card.front_chinese.replace(/\s+/g, '').trim();
 
   const status = document.getElementById('pronunStatus');
   if (status) status.textContent = 'Scoring…';
 
-  // Score: check if any transcript matches target Chinese or normalized pinyin
   let bestScore = 0;
   let bestHeard = transcripts[0] || '';
 
   for (const heard of transcripts) {
-    const heardClean = heard.trim();
+    // Normalize heard: strip spaces, punctuation
+    const heardNorm = heard.replace(/\s+/g, '').replace(/[，。！？、：；]/g, '').trim();
     let score = 0;
 
-    // Exact Chinese match
-    if (heardClean === target) { score = 100; bestHeard = heardClean; break; }
+    // Exact match (spaces stripped) → 100%
+    if (heardNorm === target) {
+      score = 100;
+      bestHeard = heard.trim();
+      bestScore = score;
+      break;
+    }
 
-    // Partial Chinese character match
+    // Target contained within heard (user said extra words) → 95%
+    if (heardNorm.includes(target)) {
+      score = 95;
+      bestHeard = heard.trim();
+    }
+
+    // Character-level overlap score
     const targetChars = Array.from(target);
-    const heardChars = Array.from(heardClean);
-    const charMatches = targetChars.filter(c => heardChars.includes(c)).length;
-    score = Math.max(score, Math.round((charMatches / targetChars.length) * 90));
+    const heardChars = Array.from(heardNorm);
+    const matched = targetChars.filter(c => heardChars.includes(c)).length;
+    const charScore = Math.round((matched / targetChars.length) * 85);
+    score = Math.max(score, charScore);
 
-    // Pinyin similarity (normalized)
-    const heardNorm = heardClean.toLowerCase().replace(/\s+/g,' ').trim();
-    if (heardNorm.includes(targetPinyin) || targetPinyin.includes(heardNorm)) score = Math.max(score, 75);
-
-    if (score > bestScore) { bestScore = score; bestHeard = heardClean; }
+    if (score > bestScore) { bestScore = score; bestHeard = heard.trim(); }
   }
 
-  // Clamp and show result
   bestScore = Math.min(100, Math.max(0, bestScore));
   pronunState.scores.push(bestScore);
   showPronunResult(bestScore, bestHeard, card);
