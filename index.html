@@ -857,7 +857,7 @@
   }
 
   .streak-badge {
-    display: none;
+    display: flex;
     align-items: center;
     gap: 5px;
     font-size: 12px;
@@ -869,10 +869,13 @@
     padding: 5px 12px;
     white-space: nowrap;
     justify-self: start;
+    visibility: hidden;
   }
 
+  .streak-badge.visible { visibility: visible; }
+
   .header-top-spacer { justify-self: end; }
-  .header-top-row .header-badge { justify-self: center; }
+  .header-top-row .header-badge { justify-self: center; display: flex; align-items: center; }
 
   /* Header controls row */
   .header-controls {
@@ -2780,11 +2783,12 @@ function updateProgressDashboard() {
   const badge = document.getElementById('streakBadge');
   const count = document.getElementById('streakCount');
   if (!badge || !count) return;
+  badge.style.display = ''; // clear any leftover inline style
   if (streak > 0) {
     count.textContent = streak;
-    badge.style.display = 'flex';
+    badge.classList.add('visible');
   } else {
-    badge.style.display = 'none';
+    badge.classList.remove('visible');
   }
 }
 
