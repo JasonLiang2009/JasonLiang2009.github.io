@@ -1430,8 +1430,16 @@
 <div class="app">
 
   <header>
-    <div class="header-badge">
-      <span>✦</span> AI-Powered
+    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:4px;">
+      <div style="width:120px;display:flex;justify-content:flex-start;">
+        <div id="streakBadge" style="display:none;align-items:center;gap:5px;font-size:13px;font-weight:600;color:#e67e22;background:rgba(230,126,34,0.1);border:1.5px solid rgba(230,126,34,0.25);border-radius:20px;padding:4px 12px;">
+          🔥 <span id="streakCount">0</span> day streak
+        </div>
+      </div>
+      <div class="header-badge">
+        <span>✦</span> AI-Powered
+      </div>
+      <div style="width:120px;"></div>
     </div>
     <h1><span class="cn">汉字卡</span> · Hànzì Cards</h1>
     <p>Describe any Chinese language topic — get an instant flashcard deck</p>
@@ -1518,8 +1526,6 @@
   <!-- Session History -->
   <div class="history-section" id="historySection"></div>
 
-  <!-- Progress Dashboard -->
-  <div class="progress-dashboard" id="progressDashboard" style="display:none"></div>
 
 </div>
 
@@ -1640,31 +1646,9 @@ async function generateCards() {
 
   let prompt;
   if (hasImage) {
-    prompt = `Look at this image. Find all Chinese characters/words/phrases in it. Create exactly ${cardCount} ${modeInstructions[activeMode]} based on the Chinese text you find in the image${topic ? `, focusing on: "${topic}"` : ''}.
-
-Return ONLY a valid JSON array (no markdown, no explanation). Each object must have:
-- "front_chinese": Chinese characters (the term, phrase, or question)
-- "front_pinyin": pinyin with tone marks
-- "front_hint": a brief English hint or sub-label (5 words max)
-- "back_english": English translation or answer (concise)
-- "back_explanation": fuller explanation, usage notes, or example sentence (1-2 sentences)
-- "back_example": a short Chinese example sentence with pinyin (or empty string if grammar card)
-- "type": one of "vocab", "phrase", "qa", or "grammar"
-
-If the image has fewer than ${cardCount} unique Chinese words, generate additional related vocabulary to reach ${cardCount} cards.`;
+    prompt = `Find Chinese text in this image and create exactly ${cardCount} ${modeInstructions[activeMode]}${topic ? ` about "${topic}"` : ''}. Return ONLY a JSON array where each object has: front_chinese, front_pinyin, front_hint, back_english, back_explanation, back_example, type. Add related vocab if fewer than ${cardCount} words found.`;
   } else {
-    prompt = `Create exactly ${cardCount} Chinese language ${modeInstructions[activeMode]} about the topic: "${topic}".
-
-Return ONLY a valid JSON array (no markdown, no explanation). Each object must have:
-- "front_chinese": Chinese characters (the term, phrase, or question)
-- "front_pinyin": pinyin with tone marks
-- "front_hint": a brief English hint or sub-label (5 words max)
-- "back_english": English translation or answer (concise)
-- "back_explanation": fuller explanation, usage notes, or example sentence (1-2 sentences)
-- "back_example": a short Chinese example sentence with pinyin (or empty string if grammar card)
-- "type": one of "vocab", "phrase", "qa", or "grammar"
-
-Ensure variety in difficulty and coverage of the topic. Make cards genuinely useful for language learning.`;
+    prompt = `Create exactly ${cardCount} Chinese language ${modeInstructions[activeMode]} about "${topic}". Return ONLY a JSON array where each object has: front_chinese, front_pinyin, front_hint, back_english, back_explanation, back_example, type. Vary difficulty.`;
   }
 
   try {
@@ -2576,70 +2560,16 @@ function recordStudyDate() {
 }
 
 function updateProgressDashboard() {
-  const dash = document.getElementById('progressDashboard');
-  if (!dash) return;
-  const stats = getProgressStats();
-  const history = getHistory();
-  const srData = getSRData();
-
-  dash.style.display = 'block';
-
-  // Per-topic mastery
-  const topicItems = history.slice(0, 5).map(h => {
-    const known = h.cards.filter(c => srGetStatus(c.front_chinese) === 'mastered').length;
-    const pct = h.cards.length ? Math.round((known / h.cards.length) * 100) : 0;
-    return { topic: h.topic, known, total: h.cards.length, pct };
-  });
-
-  dash.innerHTML = `
-    <div class="section-divider">Your Progress</div>
-    <div class="progress-grid">
-      <div class="progress-stat">
-        <div class="progress-stat-icon streak-flame">🔥</div>
-        <div>
-          <div class="progress-stat-val">${stats.streak}</div>
-          <div class="progress-stat-label">Day Streak</div>
-        </div>
-      </div>
-      <div class="progress-stat">
-        <div class="progress-stat-icon">📚</div>
-        <div>
-          <div class="progress-stat-val">${stats.totalWords}</div>
-          <div class="progress-stat-label">Words Studied</div>
-        </div>
-      </div>
-      <div class="progress-stat">
-        <div class="progress-stat-icon">⭐</div>
-        <div>
-          <div class="progress-stat-val">${stats.mastered}</div>
-          <div class="progress-stat-label">Mastered</div>
-        </div>
-      </div>
-      <div class="progress-stat">
-        <div class="progress-stat-icon">📅</div>
-        <div>
-          <div class="progress-stat-val">${stats.due}</div>
-          <div class="progress-stat-label">Due for Review</div>
-        </div>
-      </div>
-    </div>
-    ${topicItems.length ? `
-      <div class="topic-progress-list">
-        ${topicItems.map(t => `
-          <div class="topic-progress-item">
-            <div class="topic-progress-top">
-              <span class="topic-progress-name">${escapeHtml(t.topic)}</span>
-              <span class="topic-progress-pct">${t.pct}%</span>
-            </div>
-            <div class="topic-progress-bar-bg">
-              <div class="topic-progress-bar-fill" style="width:${t.pct}%"></div>
-            </div>
-            <div class="topic-progress-meta">${t.known} of ${t.total} mastered</div>
-          </div>
-        `).join('')}
-      </div>
-    ` : ''}
-  `;
+  const streak = getStudyStreak();
+  const badge = document.getElementById('streakBadge');
+  const count = document.getElementById('streakCount');
+  if (!badge || !count) return;
+  if (streak > 0) {
+    count.textContent = streak;
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
 }
 
 // ── Share Deck ────────────────────────────────────────────────────────────────
