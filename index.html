@@ -1788,6 +1788,26 @@
     margin-bottom: 28px;
   }
 
+  .btn-mute {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: none;
+    border: 1.5px solid rgba(201,146,42,0.25);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #a09070;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .btn-mute:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-mute.muted { border-color: var(--vermillion); color: var(--vermillion); background: rgba(192,57,43,0.06); }
+  body.dark .btn-mute { background: none; }
+
   .btn-record {
     width: 72px; height: 72px;
     border-radius: 50%;
@@ -3187,7 +3207,7 @@ function launchConfetti() {
 }
 
 // ── Pronunciation Mode ───────────────────────────────────────────────────────
-let pronunState = { index: 0, scores: [], recognition: null, isRecording: false };
+let pronunState = { index: 0, scores: [], recognition: null, isRecording: false, muted: false, scored: false };
 
 function renderPronunciationOnly() {
   const area = document.getElementById('deckArea');
@@ -3227,6 +3247,8 @@ function renderPronunCard() {
     ? Math.round(pronunState.scores.reduce((a,b) => a+b, 0) / pronunState.scores.length)
     : null;
 
+  pronunState.scored = false;
+
   wrap.innerHTML = `
     ${avgScore !== null ? `
     <div class="pronun-overall">
@@ -3250,6 +3272,7 @@ function renderPronunCard() {
       <div class="pronun-pinyin card-pinyin">${escapeHtml(card.front_pinyin)}</div>
       <div class="pronun-english">${escapeHtml(card.back_english)}</div>
 
+      <button class="btn-mute" id="muteBtn" onclick="toggleMute()">🔔 Sound on</button>
       <button class="btn-record" id="recordBtn" onclick="startRecording()">🎤</button>
       <div class="pronun-status" id="pronunStatus">Tap to speak</div>
 
@@ -3260,6 +3283,12 @@ function renderPronunCard() {
       <button class="btn-action" style="border-color:#a09070;color:#a09070;" onclick="skipPronun()">Skip →</button>
     </div>
   `;
+
+  // Restore mute state
+  if (pronunState.muted) {
+    const btn = document.getElementById('muteBtn');
+    if (btn) { btn.textContent = '🔕 Muted'; btn.classList.add('muted'); }
+  }
 }
 
 function startRecording() {
@@ -3268,6 +3297,9 @@ function startRecording() {
 
   const btn = document.getElementById('recordBtn');
   const status = document.getElementById('pronunStatus');
+
+  // Block if card already scored and advancing
+  if (pronunState.scored) return;
 
   // If already recording, stop it
   if (pronunState.isRecording) {
@@ -3367,9 +3399,35 @@ function scorePronunciation(transcripts) {
   showPronunResult(bestScore, bestHeard, card);
 }
 
+function toggleMute() {
+  pronunState.muted = !pronunState.muted;
+  const btn = document.getElementById('muteBtn');
+  if (!btn) return;
+  if (pronunState.muted) {
+    btn.textContent = '🔕 Muted';
+    btn.classList.add('muted');
+  } else {
+    btn.textContent = '🔔 Sound on';
+    btn.classList.remove('muted');
+  }
+}
+
 function showPronunResult(score, heard, card) {
   const result = document.getElementById('pronunResult');
   if (!result) return;
+
+  // Disable record button so user can't re-tap during advance
+  pronunState.scored = true;
+  const recordBtn = document.getElementById('recordBtn');
+  if (recordBtn) {
+    recordBtn.disabled = true;
+    recordBtn.style.opacity = '0.4';
+    recordBtn.style.cursor = 'not-allowed';
+    recordBtn.textContent = '🎤';
+    recordBtn.classList.remove('recording');
+  }
+  const status = document.getElementById('pronunStatus');
+  if (status) status.textContent = 'Moving to next word…';
 
   let grade, emoji, tip;
   if (score >= 85) {
@@ -3390,8 +3448,14 @@ function showPronunResult(score, heard, card) {
     <div class="pronun-tip">${tip}</div>
   `;
 
+  // Play audio feedback unless muted
+  if (!pronunState.muted) {
+    speakChinese(card.front_chinese);
+  }
+
   // Auto-advance after a moment
   setTimeout(() => {
+    pronunState.scored = false;
     pronunState.index++;
     renderPronunCard();
   }, score >= 85 ? 1500 : 2800);
