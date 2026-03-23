@@ -866,6 +866,54 @@
     .input-row { flex-direction: column; }
   }
 
+  /* Camera button */
+  .btn-camera {
+    background: var(--rice);
+    border: 1.5px solid rgba(201,146,42,0.3);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--gold);
+  }
+  .btn-camera:hover { background: var(--gold); color: #fff; border-color: var(--gold); }
+
+  /* Image preview */
+  .image-preview {
+    margin-top: 10px;
+    position: relative;
+    display: none;
+  }
+  .image-preview.show { display: block; }
+  .image-preview img {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1.5px solid rgba(201,146,42,0.3);
+  }
+  .image-preview-label {
+    font-size: 11px;
+    color: #a09070;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .btn-clear-image {
+    background: none;
+    border: none;
+    color: var(--vermillion);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0;
+  }
+
   /* Audio button */
   .btn-audio {
     background: none;
@@ -1069,10 +1117,19 @@
     </div>
     <div class="input-row">
       <input type="text" id="topicInput" placeholder='e.g. "restaurant ordering", "HSK 2 emotions", "family members"…' />
+      <button class="btn-camera" onclick="triggerCamera()" title="Scan Chinese text from photo">📷</button>
       <button class="btn-generate" id="generateBtn" onclick="generateCards()">
         <span class="btn-text">生成 Generate</span>
         <div class="spinner"></div>
       </button>
+    </div>
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleImageUpload(event)" />
+    <div class="image-preview" id="imagePreview">
+      <div class="image-preview-label">
+        <span>📷 Image selected — click Generate to scan</span>
+        <button class="btn-clear-image" onclick="clearImage()">✕ Remove</button>
+      </div>
+      <img id="previewImg" src="" alt="Preview" />
     </div>
   </div>
 
@@ -1133,9 +1190,46 @@ function showToast(msg, duration = 2000) {
   setTimeout(() => t.classList.remove('show'), duration);
 }
 
+let pendingImageBase64 = null;
+let pendingImageMime = null;
+
+function triggerCamera() {
+  document.getElementById('cameraInput').click();
+}
+
+function handleImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  pendingImageMime = file.type || 'image/jpeg';
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    pendingImageBase64 = dataUrl.split(',')[1];
+
+    // Show preview
+    document.getElementById('previewImg').src = dataUrl;
+    document.getElementById('imagePreview').classList.add('show');
+    document.getElementById('topicInput').placeholder = 'Optional: describe what to focus on…';
+    showToast('Image ready — tap Generate to scan');
+  };
+  reader.readAsDataURL(file);
+  // Reset input so same file can be re-selected
+  event.target.value = '';
+}
+
+function clearImage() {
+  pendingImageBase64 = null;
+  pendingImageMime = null;
+  document.getElementById('imagePreview').classList.remove('show');
+  document.getElementById('previewImg').src = '';
+  document.getElementById('topicInput').placeholder = 'e.g. "restaurant ordering", "HSK 2 emotions", "family members"…';
+}
+
 async function generateCards() {
   const topic = document.getElementById('topicInput').value.trim();
-  if (!topic) { showToast('Please enter a topic first'); return; }
+  const hasImage = !!pendingImageBase64;
+  if (!topic && !hasImage) { showToast('Enter a topic or take a photo first'); return; }
 
   const btn = document.getElementById('generateBtn');
   btn.classList.add('loading');
@@ -1152,7 +1246,22 @@ async function generateCards() {
     grammar: 'grammar pattern flashcards explaining Chinese grammar structures with examples'
   };
 
-  const prompt = `Create exactly 8 Chinese language ${modeInstructions[activeMode]} about the topic: "${topic}".
+  let prompt;
+  if (hasImage) {
+    prompt = `Look at this image. Find all Chinese characters/words/phrases in it. Create exactly 8 ${modeInstructions[activeMode]} based on the Chinese text you find in the image${topic ? `, focusing on: "${topic}"` : ''}.
+
+Return ONLY a valid JSON array (no markdown, no explanation). Each object must have:
+- "front_chinese": Chinese characters (the term, phrase, or question)
+- "front_pinyin": pinyin with tone marks
+- "front_hint": a brief English hint or sub-label (5 words max)
+- "back_english": English translation or answer (concise)
+- "back_explanation": fuller explanation, usage notes, or example sentence (1-2 sentences)
+- "back_example": a short Chinese example sentence with pinyin (or empty string if grammar card)
+- "type": one of "vocab", "phrase", "qa", or "grammar"
+
+If the image has fewer than 8 unique Chinese words, generate additional related vocabulary to reach 8 cards.`;
+  } else {
+    prompt = `Create exactly 8 Chinese language ${modeInstructions[activeMode]} about the topic: "${topic}".
 
 Return ONLY a valid JSON array (no markdown, no explanation). Each object must have:
 - "front_chinese": Chinese characters (the term, phrase, or question)
@@ -1164,12 +1273,17 @@ Return ONLY a valid JSON array (no markdown, no explanation). Each object must h
 - "type": one of "vocab", "phrase", "qa", or "grammar"
 
 Ensure variety in difficulty and coverage of the topic. Make cards genuinely useful for language learning.`;
+  }
 
   try {
+    const body = hasImage
+      ? { prompt, imageBase64: pendingImageBase64, imageMime: pendingImageMime }
+      : { prompt };
+
     const resp = await fetch('https://chinese-flashcard-proxy.jason-liang-roblox.workers.dev/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt })
+      body: JSON.stringify(body)
     });
 
     const data = await resp.json();
@@ -1186,7 +1300,8 @@ Ensure variety in difficulty and coverage of the topic. Make cards genuinely use
     currentIndex = 0;
     isFlipped = false;
     knownSet.clear();
-    saveToHistory(topic, parsed, mode);
+    clearImage();
+    saveToHistory(hasImage ? (topic || 'Photo scan') : topic, parsed, mode);
     if (matchingMode) {
       renderMatchingOnly();
     } else {
