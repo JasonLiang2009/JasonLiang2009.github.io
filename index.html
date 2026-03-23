@@ -2368,18 +2368,22 @@ function renderSentenceQuestion() {
   if (sentenceState.index >= cards.length) { renderSentenceComplete(); return; }
 
   const card = cards[sentenceState.index];
-  // Parse example sentence into words — split on spaces or characters
-  const target = card.back_example
-    ? card.back_example.split('（')[0].trim()  // remove pinyin part if present
-    : card.front_chinese;
 
-  // Split into individual characters/words for scrambling
-  const chars = target.match(/[一-鿿]+|[a-zA-Z]+|[，。！？、]/g) || [target];
-  const scrambled = [...chars].sort(() => Math.random() - 0.5);
+  // Extract Chinese-only sentence, strip pinyin
+  let raw = card.back_example || card.front_chinese;
+  // Remove parenthetical pinyin like （wǒ xiǎng...）
+  raw = raw.replace(/[（(][^）)]*[）)]/g, '').trim();
+  // Remove Latin letters, tone-mark vowels, spaces
+  raw = raw.replace(/[a-zA-ZĀ-ɏ\s]/g, '').trim();
+  const target = raw.length >= 2 ? raw : card.front_chinese;
+
+  // Split each Chinese character into its own tile
+  const validChars = Array.from(target).filter(c => c.trim().length > 0);
+  const scrambled = [...validChars].sort(() => Math.random() - 0.5);
 
   sentenceState.placed = [];
   sentenceState.available = [...scrambled];
-  sentenceState.target = chars;
+  sentenceState.target = validChars;
 
   wrap.innerHTML = `
     <div class="quiz-progress">${sentenceState.index + 1} of ${cards.length}</div>
@@ -2688,12 +2692,8 @@ function exportAnki() {
     return `${front}	${back}	${topic}`;
   });
 
-  const header = '#separator:tab
-#html:true
-#tags column:3
-';
-  const content = header + lines.join('
-');
+  const header = '#separator:tab\n#html:true\n#tags column:3\n';
+  const content = header + lines.join('\n');
   const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
