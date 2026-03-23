@@ -1751,6 +1751,151 @@
   /* Make streak badge position:relative for popup anchoring */
   .header-top-row { position: relative; }
 
+  /* ── Pronunciation Mode ── */
+  .pronun-wrap { max-width: 480px; margin: 0 auto; }
+
+  .pronun-card {
+    background: #fff;
+    border: 1px solid rgba(201,146,42,0.2);
+    border-radius: 16px;
+    padding: 36px 28px;
+    text-align: center;
+    box-shadow: 0 4px 20px var(--shadow);
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .pronun-chinese {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 64px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .pronun-pinyin {
+    font-size: 20px;
+    color: var(--vermillion);
+    font-style: italic;
+    font-family: 'Playfair Display', serif;
+    margin-bottom: 6px;
+  }
+
+  .pronun-english {
+    font-size: 15px;
+    color: #6b5a40;
+    margin-bottom: 28px;
+  }
+
+  .btn-record {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    border: 3px solid var(--vermillion);
+    background: #fff;
+    font-size: 28px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    position: relative;
+  }
+
+  .btn-record:hover { background: rgba(192,57,43,0.06); transform: scale(1.05); }
+
+  .btn-record.recording {
+    background: var(--vermillion);
+    border-color: var(--vermillion);
+    animation: pulse-record 1s infinite;
+  }
+
+  @keyframes pulse-record {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(192,57,43,0.4); }
+    50% { box-shadow: 0 0 0 14px rgba(192,57,43,0); }
+  }
+
+  .pronun-status {
+    font-size: 13px;
+    color: #a09070;
+    min-height: 20px;
+    margin-bottom: 16px;
+    font-style: italic;
+  }
+
+  .pronun-result {
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-top: 12px;
+    display: none;
+    text-align: left;
+  }
+
+  .pronun-result.show { display: block; }
+  .pronun-result.great { background: rgba(46,125,94,0.1); border: 1.5px solid rgba(46,125,94,0.3); }
+  .pronun-result.good  { background: rgba(201,146,42,0.1); border: 1.5px solid rgba(201,146,42,0.3); }
+  .pronun-result.retry { background: rgba(192,57,43,0.07); border: 1.5px solid rgba(192,57,43,0.2); }
+
+  .pronun-score {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .pronun-score.great { color: var(--jade); }
+  .pronun-score.good  { color: var(--gold); }
+  .pronun-score.retry { color: var(--vermillion); }
+
+  .pronun-heard {
+    font-size: 13px;
+    color: #6b5a40;
+    margin-bottom: 4px;
+  }
+
+  .pronun-heard span {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 15px;
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .pronun-tip {
+    font-size: 12px;
+    color: #a09070;
+    font-style: italic;
+    margin-top: 6px;
+  }
+
+  .pronun-nav {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  .pronun-overall {
+    background: #fff;
+    border: 1.5px solid rgba(201,146,42,0.2);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .pronun-stat { text-align: center; }
+  .pronun-stat-val { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; }
+  .pronun-stat-label { font-size: 11px; color: #a09070; text-transform: uppercase; letter-spacing: 0.08em; }
+
+  body.dark .pronun-card,
+  body.dark .pronun-overall { background: #1e1a14; border-color: rgba(201,146,42,0.15); }
+  body.dark .btn-record { background: #1e1a14; }
+  body.dark .pronun-english { color: #a09070; }
+
 </style>
 </head>
 <body>
@@ -1797,6 +1942,7 @@
       <button class="mode-tab" data-mode="matching">Matching</button>
       <button class="mode-tab" data-mode="quiz">Quiz</button>
       <button class="mode-tab" data-mode="sentence">Sentences</button>
+      <button class="mode-tab" data-mode="pronunciation">Pronunciation</button>
     </div>
     <div class="mode-desc" id="modeDesc">
       <span class="mode-desc-icon" id="modeDescIcon">📚</span>
@@ -1874,7 +2020,8 @@ const modeDescriptions = {
   grammar:  { icon: '📝', text: 'Grammar pattern cards explaining Chinese sentence structures with examples.' },
   matching: { icon: '🔗', text: 'Match Chinese words to their English meanings — great for quick review.' },
   quiz:     { icon: '🧠', text: 'Multiple choice quiz — pick the correct English meaning for each Chinese word.' },
-  sentence: { icon: '🔤', text: 'Arrange scrambled words into the correct Chinese sentence order.' },
+  sentence:     { icon: '🔤', text: 'Arrange scrambled words into the correct Chinese sentence order.' },
+  pronunciation: { icon: '🎤', text: 'Say the Chinese word aloud — the app scores your pronunciation instantly.' },
 };
 
 function updateModeDesc(m) {
@@ -1962,7 +2109,8 @@ async function generateCards() {
   const matchingMode = mode === 'matching';
   const quizMode = mode === 'quiz';
   const sentenceMode = mode === 'sentence';
-  const activeMode = (matchingMode || quizMode || sentenceMode) ? 'vocab' : mode;
+  const pronunciationMode = mode === 'pronunciation';
+  const activeMode = (matchingMode || quizMode || sentenceMode || pronunciationMode) ? 'vocab' : mode;
 
   const modeInstructions = {
     vocab: 'vocabulary flashcards with Chinese characters, pinyin, English meaning, and a usage example',
@@ -2013,6 +2161,8 @@ async function generateCards() {
       renderQuizOnly();
     } else if (sentenceMode) {
       renderSentenceOnly();
+    } else if (pronunciationMode) {
+      renderPronunciationOnly();
     } else {
       renderDeck();
     }
@@ -3027,6 +3177,219 @@ function launchConfetti() {
     else ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
   draw();
+}
+
+// ── Pronunciation Mode ───────────────────────────────────────────────────────
+let pronunState = { index: 0, scores: [], recognition: null };
+
+function renderPronunciationOnly() {
+  const area = document.getElementById('deckArea');
+  const topic = document.getElementById('topicInput').value;
+  pronunState = { index: 0, scores: [], recognition: null };
+
+  // Check browser support
+  const supported = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+
+  area.innerHTML = `
+    <div class="deck-header">
+      <div>
+        <div class="deck-title">${escapeHtml(topic)}</div>
+        <div class="deck-meta">${cards.length} words · pronunciation mode</div>
+      </div>
+    </div>
+    ${!supported ? `
+      <div style="text-align:center;padding:40px;color:var(--vermillion);">
+        <div style="font-size:32px;margin-bottom:12px;">😔</div>
+        <div style="font-weight:600;margin-bottom:8px;">Speech recognition not supported</div>
+        <div style="font-size:13px;color:#6b5a40;">Please use Chrome or Safari to use Pronunciation mode.</div>
+      </div>
+    ` : `
+      <div class="pronun-wrap" id="pronunWrap"></div>
+    `}
+  `;
+  if (supported) renderPronunCard();
+}
+
+function renderPronunCard() {
+  const wrap = document.getElementById('pronunWrap');
+  if (!wrap) return;
+  if (pronunState.index >= cards.length) { renderPronunComplete(); return; }
+
+  const card = cards[pronunState.index];
+  const avgScore = pronunState.scores.length
+    ? Math.round(pronunState.scores.reduce((a,b) => a+b, 0) / pronunState.scores.length)
+    : null;
+
+  wrap.innerHTML = `
+    ${avgScore !== null ? `
+    <div class="pronun-overall">
+      <div class="pronun-stat">
+        <div class="pronun-stat-val" style="color:var(--gold)">${avgScore}%</div>
+        <div class="pronun-stat-label">Avg Score</div>
+      </div>
+      <div class="pronun-stat">
+        <div class="pronun-stat-val">${pronunState.scores.filter(s=>s>=80).length}</div>
+        <div class="pronun-stat-label">Great</div>
+      </div>
+      <div class="pronun-stat">
+        <div class="pronun-stat-val">${pronunState.index} / ${cards.length}</div>
+        <div class="pronun-stat-label">Progress</div>
+      </div>
+    </div>` : ''}
+
+    <div class="pronun-card">
+      <div class="quiz-q-label">Say this word</div>
+      <div class="pronun-chinese">${escapeHtml(card.front_chinese)}</div>
+      <div class="pronun-pinyin card-pinyin">${escapeHtml(card.front_pinyin)}</div>
+      <div class="pronun-english">${escapeHtml(card.back_english)}</div>
+
+      <button class="btn-record" id="recordBtn" onclick="startRecording()">🎤</button>
+      <div class="pronun-status" id="pronunStatus">Tap to speak</div>
+
+      <div class="pronun-result" id="pronunResult"></div>
+    </div>
+
+    <div class="pronun-nav">
+      <button class="btn-action" style="border-color:#a09070;color:#a09070;" onclick="skipPronun()">Skip →</button>
+    </div>
+  `;
+}
+
+function startRecording() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) return;
+
+  if (pronunState.recognition) {
+    pronunState.recognition.abort();
+    pronunState.recognition = null;
+  }
+
+  const rec = new SpeechRecognition();
+  pronunState.recognition = rec;
+  rec.lang = 'zh-CN';
+  rec.continuous = false;
+  rec.interimResults = false;
+  rec.maxAlternatives = 5;
+
+  const btn = document.getElementById('recordBtn');
+  const status = document.getElementById('pronunStatus');
+  if (btn) { btn.classList.add('recording'); btn.textContent = '⏹'; }
+  if (status) status.textContent = 'Listening…';
+
+  rec.onresult = (event) => {
+    const results = Array.from(event.results[0]).map(r => r.transcript.trim());
+    scorePronunciation(results);
+  };
+
+  rec.onerror = (e) => {
+    if (btn) { btn.classList.remove('recording'); btn.textContent = '🎤'; }
+    if (status) status.textContent = e.error === 'no-speech' ? 'No speech detected — try again' : 'Error: ' + e.error;
+  };
+
+  rec.onend = () => {
+    if (btn) { btn.classList.remove('recording'); btn.textContent = '🎤'; }
+  };
+
+  rec.start();
+}
+
+function scorePronunciation(transcripts) {
+  const card = cards[pronunState.index];
+  const target = card.front_chinese.trim();
+  const targetPinyin = card.front_pinyin.toLowerCase().replace(/[āáǎà]/g,'a').replace(/[ēéěè]/g,'e').replace(/[īíǐì]/g,'i').replace(/[ōóǒò]/g,'o').replace(/[ūúǔù]/g,'u').replace(/[ǖǘǚǜü]/g,'u').replace(/\s+/g,' ').trim();
+
+  const status = document.getElementById('pronunStatus');
+  if (status) status.textContent = 'Scoring…';
+
+  // Score: check if any transcript matches target Chinese or normalized pinyin
+  let bestScore = 0;
+  let bestHeard = transcripts[0] || '';
+
+  for (const heard of transcripts) {
+    const heardClean = heard.trim();
+    let score = 0;
+
+    // Exact Chinese match
+    if (heardClean === target) { score = 100; bestHeard = heardClean; break; }
+
+    // Partial Chinese character match
+    const targetChars = Array.from(target);
+    const heardChars = Array.from(heardClean);
+    const charMatches = targetChars.filter(c => heardChars.includes(c)).length;
+    score = Math.max(score, Math.round((charMatches / targetChars.length) * 90));
+
+    // Pinyin similarity (normalized)
+    const heardNorm = heardClean.toLowerCase().replace(/\s+/g,' ').trim();
+    if (heardNorm.includes(targetPinyin) || targetPinyin.includes(heardNorm)) score = Math.max(score, 75);
+
+    if (score > bestScore) { bestScore = score; bestHeard = heardClean; }
+  }
+
+  // Clamp and show result
+  bestScore = Math.min(100, Math.max(0, bestScore));
+  pronunState.scores.push(bestScore);
+  showPronunResult(bestScore, bestHeard, card);
+}
+
+function showPronunResult(score, heard, card) {
+  const result = document.getElementById('pronunResult');
+  if (!result) return;
+
+  let grade, emoji, tip;
+  if (score >= 85) {
+    grade = 'great'; emoji = '🎉';
+    tip = 'Excellent! Your pronunciation is spot on.';
+  } else if (score >= 60) {
+    grade = 'good'; emoji = '👍';
+    tip = `Good attempt! Try saying "${card.front_pinyin}" more clearly.`;
+  } else {
+    grade = 'retry'; emoji = '💪';
+    tip = `Keep practicing! The correct pronunciation is: ${card.front_pinyin}`;
+  }
+
+  result.className = `pronun-result show ${grade}`;
+  result.innerHTML = `
+    <div class="pronun-score ${grade}">${emoji} ${score}%</div>
+    <div class="pronun-heard">You said: <span>${escapeHtml(heard || '—')}</span></div>
+    <div class="pronun-tip">${tip}</div>
+  `;
+
+  // Auto-advance after a moment
+  setTimeout(() => {
+    pronunState.index++;
+    renderPronunCard();
+  }, score >= 85 ? 1500 : 2800);
+}
+
+function skipPronun() {
+  if (pronunState.recognition) pronunState.recognition.abort();
+  pronunState.index++;
+  renderPronunCard();
+}
+
+function renderPronunComplete() {
+  const wrap = document.getElementById('pronunWrap');
+  if (!wrap) return;
+  const avg = pronunState.scores.length
+    ? Math.round(pronunState.scores.reduce((a,b)=>a+b,0) / pronunState.scores.length)
+    : 0;
+  const great = pronunState.scores.filter(s=>s>=85).length;
+  const emoji = avg >= 85 ? '🎉' : avg >= 60 ? '👍' : '💪';
+  if (avg === 100) launchConfetti();
+
+  wrap.innerHTML = `
+    <div class="quiz-complete">
+      <div style="font-size:48px;margin-bottom:12px;">${emoji}</div>
+      <h3>Practice Complete!</h3>
+      <p>Average score: ${avg}%</p>
+      <div class="matching-stats">
+        <div class="stat-item"><div class="stat-value" style="color:var(--gold)">${avg}%</div><div class="stat-label">Avg Score</div></div>
+        <div class="stat-item"><div class="stat-value" style="color:var(--jade)">${great}</div><div class="stat-label">Great (85%+)</div></div>
+        <div class="stat-item"><div class="stat-value">${cards.length}</div><div class="stat-label">Words</div></div>
+      </div>
+      <button class="btn-generate" style="margin:0 auto;display:flex;" onclick="renderPronunciationOnly()">↺ Try Again</button>
+    </div>
+  `;
 }
 
 // ── Streak Calendar Popup ────────────────────────────────────────────────────
