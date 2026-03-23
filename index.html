@@ -2475,8 +2475,15 @@ function loadFromHistory(id) {
   document.querySelectorAll('.mode-tab').forEach(t => {
     t.classList.toggle('active', t.dataset.mode === mode);
   });
+  updateModeDesc(mode);
   if (mode === 'matching') {
     renderMatchingOnly();
+  } else if (mode === 'quiz') {
+    renderQuizOnly();
+  } else if (mode === 'sentence') {
+    renderSentenceOnly();
+  } else if (mode === 'pronunciation') {
+    renderPronunciationOnly();
   } else {
     renderDeck();
   }
@@ -3180,7 +3187,7 @@ function launchConfetti() {
 }
 
 // ── Pronunciation Mode ───────────────────────────────────────────────────────
-let pronunState = { index: 0, scores: [], recognition: null };
+let pronunState = { index: 0, scores: [], recognition: null, isRecording: false };
 
 function renderPronunciationOnly() {
   const area = document.getElementById('deckArea');
@@ -3259,6 +3266,22 @@ function startRecording() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) return;
 
+  const btn = document.getElementById('recordBtn');
+  const status = document.getElementById('pronunStatus');
+
+  // If already recording, stop it
+  if (pronunState.isRecording) {
+    if (pronunState.recognition) {
+      pronunState.recognition.stop();
+      pronunState.recognition = null;
+    }
+    pronunState.isRecording = false;
+    if (btn) { btn.classList.remove('recording'); btn.textContent = '🎤'; }
+    if (status) status.textContent = 'Tap to speak';
+    return;
+  }
+
+  // Clear any stale recognition
   if (pronunState.recognition) {
     pronunState.recognition.abort();
     pronunState.recognition = null;
@@ -3266,28 +3289,34 @@ function startRecording() {
 
   const rec = new SpeechRecognition();
   pronunState.recognition = rec;
+  pronunState.isRecording = true;
   rec.lang = 'zh-CN';
   rec.continuous = false;
   rec.interimResults = false;
   rec.maxAlternatives = 5;
 
-  const btn = document.getElementById('recordBtn');
-  const status = document.getElementById('pronunStatus');
   if (btn) { btn.classList.add('recording'); btn.textContent = '⏹'; }
   if (status) status.textContent = 'Listening…';
 
   rec.onresult = (event) => {
+    pronunState.isRecording = false;
+    pronunState.recognition = null;
     const results = Array.from(event.results[0]).map(r => r.transcript.trim());
     scorePronunciation(results);
   };
 
   rec.onerror = (e) => {
+    pronunState.isRecording = false;
+    pronunState.recognition = null;
     if (btn) { btn.classList.remove('recording'); btn.textContent = '🎤'; }
     if (status) status.textContent = e.error === 'no-speech' ? 'No speech detected — try again' : 'Error: ' + e.error;
   };
 
   rec.onend = () => {
+    pronunState.isRecording = false;
+    pronunState.recognition = null;
     if (btn) { btn.classList.remove('recording'); btn.textContent = '🎤'; }
+    if (status && status.textContent === 'Listening…') status.textContent = 'Tap to speak';
   };
 
   rec.start();
