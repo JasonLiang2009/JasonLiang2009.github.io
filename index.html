@@ -3583,7 +3583,8 @@ function showPronunResult(score, heard, card) {
     <div class="pronun-tip">${tip}</div>
   `;
 
-  speakChinese(card.front_chinese);
+  // Delay playback so mic engine fully stops before TTS starts
+  setTimeout(() => speakChinese(card.front_chinese), 600);
 
   // Auto-advance after a moment
   setTimeout(() => {
