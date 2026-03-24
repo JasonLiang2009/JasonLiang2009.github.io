@@ -2019,10 +2019,88 @@
   body.dark .tutorial-feature { background: rgba(201,146,42,0.08); color: #a09070; }
   .tutorial-feature-icon { font-size: 18px; flex-shrink: 0; }
 
+  /* Translate button */
+  .btn-translate {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 500;
+    background: rgba(255,255,255,0.92);
+    border: none;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #6b5a40;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 2px 12px rgba(26,18,8,0.12);
+    backdrop-filter: blur(8px);
+  }
+  .btn-translate:hover { background: var(--gold); color: #fff; }
+  .btn-translate:hover #langSelect { color: #fff; }
+  body.dark .btn-translate { background: rgba(30,26,20,0.92); color: #a09070; }
+  body.dark .btn-translate:hover { background: var(--gold); color: #fff; }
+  #langSelect {
+    appearance: none;
+    -webkit-appearance: none;
+    background: none;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: inherit;
+    cursor: pointer;
+    outline: none;
+    padding: 0;
+  }
+  #langSelect option { background: #fff; color: #1a1208; }
+  body.dark #langSelect { color: #a09070; }
+  body.dark #langSelect option { background: #1e1a14; color: #f0e8d8; }
+
+  /* Tutorial lang toggle */
+  .tutorial-lang-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 18px;
+  }
+  .tutorial-lang-btn {
+    padding: 4px 14px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1.5px solid rgba(201,146,42,0.3);
+    background: transparent;
+    color: #a09070;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .tutorial-lang-btn.active { background: var(--gold); color: #fff; border-color: var(--gold); }
+
 </style>
 </head>
 <body>
 <div class="app">
+
+<div class="btn-translate" id="translateBtn">
+  🌐 <select id="langSelect" onchange="setUILang(this.value)" style="background:none;border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:inherit;cursor:pointer;outline:none;padding:0;">
+    <option value="en">English</option>
+    <option value="zh">中文</option>
+    <option value="es">Español</option>
+    <option value="fr">Français</option>
+    <option value="ja">日本語</option>
+    <option value="ko">한국어</option>
+    <option value="pt">Português</option>
+    <option value="ar">العربية</option>
+  </select>
+</div>
 
   <header>
     <div class="header-top-row">
@@ -2141,16 +2219,93 @@ let mode = 'vocab';
 let knownSet = new Set();
 
 // Mode descriptions
-const modeDescriptions = {
-  vocab:    { icon: '📚', text: 'Flip cards to reveal Chinese vocabulary, pinyin, and meaning.' },
-  qa:       { icon: '❓', text: 'Question and answer cards — test your understanding of Chinese concepts.' },
-  phrases:  { icon: '💬', text: 'Common phrases with translation and context for real conversations.' },
-  grammar:  { icon: '📝', text: 'Grammar pattern cards explaining Chinese sentence structures with examples.' },
-  matching: { icon: '🔗', text: 'Match Chinese words to their English meanings — great for quick review.' },
-  quiz:     { icon: '🧠', text: 'Multiple choice quiz — pick the correct English meaning for each Chinese word.' },
-  sentence:     { icon: '🔤', text: 'Arrange scrambled words into the correct Chinese sentence order.' },
-  pronunciation: { icon: '🎤', text: 'Say the Chinese word aloud — the app scores your pronunciation instantly.' },
+const modeDescriptionsAll = {
+  en: {
+    vocab:        { icon: '📚', text: 'Flip cards to reveal Chinese vocabulary, pinyin, and meaning.' },
+    qa:           { icon: '❓', text: 'Question and answer cards — test your understanding of Chinese concepts.' },
+    phrases:      { icon: '💬', text: 'Common phrases with translation and context for real conversations.' },
+    grammar:      { icon: '📝', text: 'Grammar pattern cards explaining Chinese sentence structures with examples.' },
+    matching:     { icon: '🔗', text: 'Match Chinese words to their English meanings — great for quick review.' },
+    quiz:         { icon: '🧠', text: 'Multiple choice quiz — pick the correct English meaning for each Chinese word.' },
+    sentence:     { icon: '🔤', text: 'Arrange scrambled words into the correct Chinese sentence order.' },
+    pronunciation:{ icon: '🎤', text: 'Say the Chinese word aloud — the app scores your pronunciation instantly.' },
+  },
+  zh: {
+    vocab:        { icon: '📚', text: '翻转卡片查看中文词汇、拼音和释义。' },
+    qa:           { icon: '❓', text: '问答卡片——测试您对中文概念的理解。' },
+    phrases:      { icon: '💬', text: '常用短语，含翻译和情境，适用于真实对话。' },
+    grammar:      { icon: '📝', text: '语法卡片，通过例句解释中文句型结构。' },
+    matching:     { icon: '🔗', text: '将中文词语与其英文释义配对——快速复习好帮手。' },
+    quiz:         { icon: '🧠', text: '多项选择测验——为每个中文词语选择正确的释义。' },
+    sentence:     { icon: '🔤', text: '将打乱的词语排列成正确的中文句子顺序。' },
+    pronunciation:{ icon: '🎤', text: '大声说出中文词语——应用即时为您的发音评分。' },
+  },
+  es: {
+    vocab:        { icon: '📚', text: 'Voltea las tarjetas para revelar vocabulario chino, pinyin y significado.' },
+    qa:           { icon: '❓', text: 'Tarjetas de preguntas y respuestas — pon a prueba tu comprensión del chino.' },
+    phrases:      { icon: '💬', text: 'Frases comunes con traducción y contexto para conversaciones reales.' },
+    grammar:      { icon: '📝', text: 'Tarjetas de gramática que explican estructuras de oraciones chinas con ejemplos.' },
+    matching:     { icon: '🔗', text: 'Empareja palabras chinas con sus significados en español.' },
+    quiz:         { icon: '🧠', text: 'Quiz de opción múltiple — elige el significado correcto de cada palabra china.' },
+    sentence:     { icon: '🔤', text: 'Ordena las palabras para formar la oración china correcta.' },
+    pronunciation:{ icon: '🎤', text: 'Di la palabra china en voz alta — la app califica tu pronunciación al instante.' },
+  },
+  fr: {
+    vocab:        { icon: '📚', text: 'Retournez les cartes pour révéler le vocabulaire, le pinyin et le sens.' },
+    qa:           { icon: '❓', text: 'Cartes questions-réponses — testez votre compréhension du chinois.' },
+    phrases:      { icon: '💬', text: 'Phrases courantes avec traduction et contexte pour de vraies conversations.' },
+    grammar:      { icon: '📝', text: 'Cartes de grammaire expliquant les structures de phrases chinoises avec des exemples.' },
+    matching:     { icon: '🔗', text: 'Associez les mots chinois à leurs significations — idéal pour une révision rapide.' },
+    quiz:         { icon: '🧠', text: 'Quiz à choix multiple — choisissez le bon sens pour chaque mot chinois.' },
+    sentence:     { icon: '🔤', text: 'Arrangez les mots mélangés dans le bon ordre pour former la phrase.' },
+    pronunciation:{ icon: '🎤', text: "Dites le mot chinois à voix haute — l'app note votre prononciation instantanément." },
+  },
+  ja: {
+    vocab:        { icon: '📚', text: 'カードをめくって中国語の語彙、ピンイン、意味を確認。' },
+    qa:           { icon: '❓', text: '問答カード — 中国語の理解度をテストしましょう。' },
+    phrases:      { icon: '💬', text: '実際の会話で使える翻訳とコンテキスト付きの一般的なフレーズ。' },
+    grammar:      { icon: '📝', text: '例文を通じて中国語の文型を解説する文法カード。' },
+    matching:     { icon: '🔗', text: '中国語と日本語の意味をマッチング — 素早い復習に最適。' },
+    quiz:         { icon: '🧠', text: '多肢選択問題 — 各中国語の正しい意味を選んでください。' },
+    sentence:     { icon: '🔤', text: 'バラバラの単語を並べ替えて正しい中国語の文を作ろう。' },
+    pronunciation:{ icon: '🎤', text: '中国語を声に出して — アプリが即座に発音を採点します。' },
+  },
+  ko: {
+    vocab:        { icon: '📚', text: '카드를 뒤집어 중국어 어휘, 병음, 뜻을 확인하세요.' },
+    qa:           { icon: '❓', text: '질문과 답변 카드 — 중국어 이해도를 테스트하세요.' },
+    phrases:      { icon: '💬', text: '실제 대화를 위한 번역과 맥락이 담긴 일반 문구.' },
+    grammar:      { icon: '📝', text: '예문으로 중국어 문장 구조를 설명하는 문법 카드.' },
+    matching:     { icon: '🔗', text: '중국어 단어를 한국어 뜻과 연결 — 빠른 복습에 좋아요.' },
+    quiz:         { icon: '🧠', text: '객관식 퀴즈 — 각 중국어 단어의 올바른 뜻을 고르세요.' },
+    sentence:     { icon: '🔤', text: '흩어진 단어를 올바른 중국어 문장 순서로 배열하세요.' },
+    pronunciation:{ icon: '🎤', text: '중국어 단어를 소리 내어 말해보세요 — 앱이 즉시 채점합니다.' },
+  },
+  pt: {
+    vocab:        { icon: '📚', text: 'Vire os cartões para revelar vocabulário chinês, pinyin e significado.' },
+    qa:           { icon: '❓', text: 'Cartões de perguntas e respostas — teste sua compreensão do chinês.' },
+    phrases:      { icon: '💬', text: 'Frases comuns com tradução e contexto para conversas reais.' },
+    grammar:      { icon: '📝', text: 'Cartões de gramática explicando estruturas de frases chinesas com exemplos.' },
+    matching:     { icon: '🔗', text: 'Combine palavras chinesas com seus significados — ótimo para revisão rápida.' },
+    quiz:         { icon: '🧠', text: 'Quiz de múltipla escolha — escolha o significado correto de cada palavra chinesa.' },
+    sentence:     { icon: '🔤', text: 'Organize as palavras embaralhadas na ordem correta da frase chinesa.' },
+    pronunciation:{ icon: '🎤', text: 'Diga a palavra chinesa em voz alta — o app pontua sua pronúncia instantaneamente.' },
+  },
+  ar: {
+    vocab:        { icon: '📚', text: 'اقلب البطاقات للكشف عن المفردات الصينية والنطق والمعنى.' },
+    qa:           { icon: '❓', text: 'بطاقات الأسئلة والأجوبة — اختبر فهمك للمفاهيم الصينية.' },
+    phrases:      { icon: '💬', text: 'عبارات شائعة مع الترجمة والسياق للمحادثات الحقيقية.' },
+    grammar:      { icon: '📝', text: 'بطاقات القواعد النحوية لشرح تراكيب الجمل الصينية بالأمثلة.' },
+    matching:     { icon: '🔗', text: 'طابق الكلمات الصينية مع معانيها — رائع للمراجعة السريعة.' },
+    quiz:         { icon: '🧠', text: 'اختيار من متعدد — اختر المعنى الصحيح لكل كلمة صينية.' },
+    sentence:     { icon: '🔤', text: 'رتب الكلمات المبعثرة في الترتيب الصحيح للجملة الصينية.' },
+    pronunciation:{ icon: '🎤', text: 'قل الكلمة الصينية بصوت عالٍ — يقيّم التطبيق نطقك فورًا.' },
+  },
 };
+
+function getModeDescriptions() {
+  return modeDescriptionsAll[uiLang] || modeDescriptionsAll.en;
+}
+const modeDescriptions = new Proxy({}, { get: (_, key) => getModeDescriptions()[key] });
 
 function updateModeDesc(m) {
   const d = modeDescriptions[m] || modeDescriptions.vocab;
@@ -3628,44 +3783,111 @@ function renderPronunComplete() {
 }
 
 // ── First-time Tutorial ──────────────────────────────────────────────────────
+// ── Translate (UI language toggle) ───────────────────────────────────────────
+let uiLang = 'en'; // 'en' or 'zh'
+
+const translations = {
+  en: { subtitle: 'Describe any Chinese language topic — get an instant flashcard deck', topicLabel: 'Topic or Theme', placeholder: 'e.g. "restaurant ordering", "HSK 2 emotions", "family members"…', generateBtn: '生成 Generate', quickLabel: '⚡ Quick Generate by difficulty', levels: ['Beginner','Elementary','Intermediate','Advanced','Fluent','Master'], pinyinLabel: 'Pīnyīn', darkLabel: '🌙 Dark', lightLabel: '☀️ Light', cardsLabel: 'Cards to generate:', gotIt: '✓ Got it', reviewAgain: '↺ Review again', flipHint: 'Click card to flip', recentDecks: 'Recent Decks' },
+  zh: { subtitle: '输入任何中文话题，立即生成闪卡', topicLabel: '话题或主题', placeholder: '例如"点餐"、"情感词汇"、"家庭成员"…', generateBtn: '生成', quickLabel: '⚡ 按难度快速生成', levels: ['入门','初级','中级','高级','流利','精通'], pinyinLabel: '拼音', darkLabel: '🌙 深色', lightLabel: '☀️ 浅色', cardsLabel: '生成卡片数：', gotIt: '✓ 已掌握', reviewAgain: '↺ 再复习', flipHint: '点击翻转', recentDecks: '最近学习' },
+  es: { subtitle: 'Describe cualquier tema del idioma chino — obtén tarjetas instantáneas', topicLabel: 'Tema', placeholder: 'p.ej. "pedir en restaurante", "emociones HSK 2"…', generateBtn: '生成 Generar', quickLabel: '⚡ Generar por dificultad', levels: ['Principiante','Elemental','Intermedio','Avanzado','Fluido','Maestro'], pinyinLabel: 'Pīnyīn', darkLabel: '🌙 Oscuro', lightLabel: '☀️ Claro', cardsLabel: 'Tarjetas a generar:', gotIt: '✓ Entendido', reviewAgain: '↺ Repasar', flipHint: 'Clic para voltear', recentDecks: 'Mazos recientes' },
+  fr: { subtitle: "Décrivez n'importe quel sujet en chinois — obtenez des flashcards instantanément", topicLabel: "Sujet ou Thème", placeholder: 'ex. "commander au restaurant", "émotions HSK 2"…', generateBtn: '生成 Générer', quickLabel: '⚡ Génération rapide par niveau', levels: ['Débutant','Élémentaire','Intermédiaire','Avancé','Courant','Maître'], pinyinLabel: 'Pīnyīn', darkLabel: '🌙 Sombre', lightLabel: '☀️ Clair', cardsLabel: 'Cartes à générer :', gotIt: '✓ Compris', reviewAgain: '↺ Revoir', flipHint: 'Cliquer pour retourner', recentDecks: 'Paquets récents' },
+  ja: { subtitle: '中国語のトピックを入力して、フラッシュカードを即座に生成', topicLabel: 'トピックまたはテーマ', placeholder: '例：「レストランで注文」「HSK感情語彙」…', generateBtn: '生成 Generate', quickLabel: '⚡ 難易度別クイック生成', levels: ['初級','基礎','中級','上級','流暢','マスター'], pinyinLabel: 'ピンイン', darkLabel: '🌙 ダーク', lightLabel: '☀️ ライト', cardsLabel: '生成枚数：', gotIt: '✓ 覚えた', reviewAgain: '↺ 復習', flipHint: 'クリックして裏返す', recentDecks: '最近のデッキ' },
+  ko: { subtitle: '중국어 주제를 입력하면 플래시카드를 즉시 생성합니다', topicLabel: '주제 또는 테마', placeholder: '예: "레스토랑 주문", "HSK 감정 어휘"…', generateBtn: '생성 Generate', quickLabel: '⚡ 난이도별 빠른 생성', levels: ['초급','기초','중급','고급','유창','마스터'], pinyinLabel: '병음', darkLabel: '🌙 다크', lightLabel: '☀️ 라이트', cardsLabel: '생성할 카드 수:', gotIt: '✓ 알겠어요', reviewAgain: '↺ 다시 복습', flipHint: '클릭하여 뒤집기', recentDecks: '최근 덱' },
+  pt: { subtitle: 'Descreva qualquer tópico do idioma chinês — obtenha flashcards instantaneamente', topicLabel: 'Tópico ou Tema', placeholder: 'ex. "pedir no restaurante", "emoções HSK 2"…', generateBtn: '生成 Gerar', quickLabel: '⚡ Gerar por dificuldade', levels: ['Iniciante','Elementar','Intermediário','Avançado','Fluente','Mestre'], pinyinLabel: 'Pīnyīn', darkLabel: '🌙 Escuro', lightLabel: '☀️ Claro', cardsLabel: 'Cartões a gerar:', gotIt: '✓ Entendi', reviewAgain: '↺ Revisar', flipHint: 'Clique para virar', recentDecks: 'Decks recentes' },
+  ar: { subtitle: 'صف أي موضوع باللغة الصينية — احصل على بطاقات تعليمية فورية', topicLabel: 'الموضوع أو الفئة', placeholder: 'مثل "الطلب في المطعم"، "مفردات HSK"…', generateBtn: '生成 توليد', quickLabel: '⚡ توليد سريع حسب المستوى', levels: ['مبتدئ','أساسي','متوسط','متقدم','طليق','محترف'], pinyinLabel: 'بينيين', darkLabel: '🌙 داكن', lightLabel: '☀️ فاتح', cardsLabel: 'عدد البطاقات:', gotIt: '✓ فهمت', reviewAgain: '↺ مراجعة', flipHint: 'انقر للقلب', recentDecks: 'المجموعات الأخيرة' },
+};
+
+function setUILang(lang) {
+  uiLang = lang;
+  applyTranslation();
+  // Sync tutorial lang too
+  tutorialLang = lang;
+  renderTutorialLangToggle();
+}
+
+function applyTranslation() {
+  const t = translations[uiLang];
+  // RTL for Arabic
+  document.body.style.direction = uiLang === 'ar' ? 'rtl' : 'ltr';
+
+  // Subtitle
+  const subtitle = document.querySelector('header p');
+  if (subtitle) subtitle.textContent = t.subtitle;
+
+  // Topic label
+  const topicLabel = document.querySelector('.generator label');
+  if (topicLabel) topicLabel.textContent = t.topicLabel;
+
+  // Input placeholder
+  const input = document.getElementById('topicInput');
+  if (input && !input.value) input.placeholder = t.placeholder;
+
+  // Generate button
+  const genBtn = document.querySelector('.btn-generate .btn-text');
+  if (genBtn) genBtn.textContent = t.generateBtn;
+
+  // Quick generate label
+  const quickLabel = document.querySelector('.quick-generate-label');
+  if (quickLabel) quickLabel.textContent = t.quickLabel;
+
+  // Difficulty chips
+  const chips = document.querySelectorAll('.hsk-chip');
+  chips.forEach((chip, i) => {
+    const dot = chip.querySelector('.chip-dot');
+    chip.textContent = '';
+    if (dot) chip.appendChild(dot);
+    chip.appendChild(document.createTextNode(t.levels[i] || chip.textContent));
+  });
+
+  // Pinyin label
+  const pinyinLabel = document.querySelector('.pinyin-toggle span');
+  if (pinyinLabel) pinyinLabel.textContent = t.pinyinLabel;
+
+  // Dark toggle
+  const darkBtn = document.getElementById('darkToggle');
+  if (darkBtn) {
+    const isDark = document.body.classList.contains('dark');
+    darkBtn.innerHTML = isDark ? t.lightLabel : t.darkLabel;
+  }
+
+  // Cards label
+  const cardsLabel = document.querySelector('.card-count-label');
+  if (cardsLabel) cardsLabel.textContent = t.cardsLabel;
+
+  // Refresh current mode description
+  updateModeDesc(mode);
+
+  // Update tutorial lang if open
+  renderTutorialLangToggle();
+}
+
+// Tutorial bilingual steps
 const tutorialSteps = [
   {
-    icon: '汉字卡',
-    iconStyle: 'font-family:"Noto Serif SC",serif;font-size:42px;color:var(--vermillion);',
-    title: 'Welcome to Hànzì Cards!',
-    desc: 'Your AI-powered Chinese flashcard app. Learn vocabulary, practice pronunciation, and track your progress — all for free.',
-    btn: 'Get Started →'
+    en: { icon: '汉字卡', iconStyle: 'font-family:"Noto Serif SC",serif;font-size:42px;color:var(--vermillion);', title: 'Welcome to Hànzì Cards!', desc: 'Your AI-powered Chinese flashcard app. Learn vocabulary, practice pronunciation, and track your progress — all for free.', btn: 'Get Started →' },
+    zh: { icon: '汉字卡', iconStyle: 'font-family:"Noto Serif SC",serif;font-size:42px;color:var(--vermillion);', title: '欢迎使用汉字卡！', desc: 'AI驱动的中文闪卡应用，学习词汇、练习发音、追踪进度——完全免费。', btn: '开始学习 →' },
+    es: { icon: '汉字卡', iconStyle: 'font-family:"Noto Serif SC",serif;font-size:42px;color:var(--vermillion);', title: '¡Bienvenido a Hànzì Cards!', desc: 'Tu app de flashcards de chino con IA. Aprende vocabulario, practica pronunciación y sigue tu progreso — gratis.', btn: 'Empezar →' },
+    fr: { icon: '汉字卡', iconStyle: 'font-family:"Noto Serif SC",serif;font-size:42px;color:var(--vermillion);', title: 'Bienvenue sur Hànzì Cards !', desc: 'Votre application de flashcards chinois alimentée par IA. Apprenez le vocabulaire, pratiquez la prononciation — gratuitement.', btn: 'Commencer →' },
+    ja: { icon: '汉字卡', iconStyle: 'font-family:"Noto Serif SC",serif;font-size:42px;color:var(--vermillion);', title: '漢字カードへようこそ！', desc: 'AI搭載の中国語フラッシュカードアプリ。語彙を学び、発音を練習し、進捗を追跡 — 完全無料。', btn: '始める →' },
+    ko: { icon: '汉字卡', iconStyle: 'font-family:"Noto Serif SC",serif;font-size:42px;color:var(--vermillion);', title: 'Hànzì Cards에 오신 것을 환영합니다!', desc: 'AI 기반 중국어 플래시카드 앱입니다. 어휘 학습, 발음 연습, 진도 추적 — 완전 무료.', btn: '시작하기 →' },
+    pt: { icon: '汉字卡', iconStyle: 'font-family:"Noto Serif SC",serif;font-size:42px;color:var(--vermillion);', title: 'Bem-vindo ao Hànzì Cards!', desc: 'Seu app de flashcards de chinês com IA. Aprenda vocabulário, pratique pronúncia e acompanhe seu progresso — grátis.', btn: 'Começar →' },
+    ar: { icon: '汉字卡', iconStyle: 'font-family:"Noto Serif SC",serif;font-size:42px;color:var(--vermillion);', title: 'مرحباً بك في Hànzì Cards!', desc: 'تطبيق بطاقات تعليمية للغة الصينية بالذكاء الاصطناعي. تعلم المفردات وتدرب على النطق وتتبع تقدمك — مجاناً.', btn: 'ابدأ الآن →' },
   },
   {
-    icon: '🎯',
-    title: 'Pick Your Mode',
-    desc: 'Choose from 8 study modes — Vocabulary, Q&A, Phrases, Grammar, Matching, Quiz, Sentences, and Pronunciation. Each one trains a different skill.',
-    features: [
-      { icon: '📚', text: 'Flip flashcards' },
-      { icon: '🧠', text: 'Multiple choice quiz' },
-      { icon: '🔗', text: 'Match pairs' },
-      { icon: '🎤', text: 'Speak & score' },
-    ],
-    btn: 'Next →'
+    en: { icon: '🎯', title: 'Pick Your Mode', desc: 'Choose from 8 study modes — Vocabulary, Q&A, Phrases, Grammar, Matching, Quiz, Sentences, and Pronunciation.', features: [{ icon: '📚', text: 'Flip flashcards' },{ icon: '🧠', text: 'Multiple choice quiz' },{ icon: '🔗', text: 'Match pairs' },{ icon: '🎤', text: 'Speak & score' }], btn: 'Next →' },
+    zh: { icon: '🎯', title: '选择学习模式', desc: '从8种学习模式中选择——词汇、问答、短语、语法、配对、测验、造句和发音练习。', features: [{ icon: '📚', text: '翻转闪卡' },{ icon: '🧠', text: '多选测验' },{ icon: '🔗', text: '配对练习' },{ icon: '🎤', text: '发音评分' }], btn: '下一步 →' },
   },
   {
-    icon: '⚡',
-    title: 'Generate Instantly',
-    desc: 'Type any topic — "restaurant ordering", "HSK emotions", "colors" — and tap Generate. Or use Quick Generate to pick a difficulty level.',
-    btn: 'Next →'
+    en: { icon: '⚡', title: 'Generate Instantly', desc: 'Type any topic and tap Generate. Or use Quick Generate to pick a difficulty level from Beginner to Master.', btn: 'Next →' },
+    zh: { icon: '⚡', title: '即时生成', desc: '输入任何话题，点击生成。或使用快速生成按钮，从入门到精通选择难度等级。', btn: '下一步 →' },
   },
   {
-    icon: '📷',
-    title: 'Scan Chinese Text',
-    desc: 'Tap the 📷 camera button to take a photo of any Chinese text — a menu, sign, or textbook — and generate cards from it instantly.',
-    btn: 'Next →'
+    en: { icon: '📷', title: 'Scan Chinese Text', desc: 'Tap the 📷 camera button to take a photo of any Chinese text — a menu, sign, or textbook — and generate cards instantly.', btn: 'Next →' },
+    zh: { icon: '📷', title: '扫描中文文字', desc: '点击📷摄像头按钮，拍摄任何中文文字——菜单、标牌或教材——立即生成闪卡。', btn: '下一步 →' },
   },
   {
-    icon: '🔥',
-    title: 'Build Your Streak',
-    desc: 'Study every day to build your streak. Tap the 🔥 badge to see your monthly calendar. Cards you mark "Got it" are tracked with spaced repetition.',
-    btn: 'Start Learning! 🚀',
-    finish: true
+    en: { icon: '🔥', title: 'Build Your Streak', desc: 'Study every day to build your streak. Tap 🔥 to see your calendar. Cards you mark "Got it" use spaced repetition.', btn: 'Start Learning! 🚀', finish: true },
+    zh: { icon: '🔥', title: '保持学习连续', desc: '每天学习以保持连续记录。点击🔥查看日历。标记"已掌握"的卡片会使用间隔重复算法。', btn: '开始学习！🚀', finish: true },
   }
 ];
 
@@ -3677,8 +3899,31 @@ function showTutorial() {
   renderTutorialStep();
 }
 
+let tutorialLang = 'en';
+
+const langNames = { en:'EN', zh:'中文', es:'ES', fr:'FR', ja:'日本語', ko:'한국어', pt:'PT', ar:'AR' };
+
+function renderTutorialLangToggle() {
+  const el = document.getElementById('tutorialLangToggle');
+  if (!el) return;
+  el.innerHTML = Object.entries(langNames).map(([code, label]) =>
+    `<button class="tutorial-lang-btn ${tutorialLang === code ? 'active' : ''}" onclick="setTutorialLang('${code}')">${label}</button>`
+  ).join('');
+}
+
+function setTutorialLang(lang) {
+  tutorialLang = lang;
+  uiLang = lang;
+  // Sync main select
+  const sel = document.getElementById('langSelect');
+  if (sel) sel.value = lang;
+  renderTutorialStep();
+  applyTranslation();
+}
+
 function renderTutorialStep() {
-  const step = tutorialSteps[tutorialStep];
+  const stepData = tutorialSteps[tutorialStep];
+  const step = stepData[tutorialLang] || stepData.en;
   const box = document.getElementById('tutorialBox');
   if (!box) return;
 
@@ -3697,14 +3942,20 @@ function renderTutorialStep() {
     </div>
   ` : '';
 
+  const skipText = tutorialLang === 'zh' ? '跳过' : 'Skip';
+
   box.innerHTML = `
+    <div class="tutorial-lang-toggle" id="tutorialLangToggle">
+      <button class="tutorial-lang-btn ${tutorialLang === 'en' ? 'active' : ''}" onclick="setTutorialLang('en')">English</button>
+      <button class="tutorial-lang-btn ${tutorialLang === 'zh' ? 'active' : ''}" onclick="setTutorialLang('zh')">中文</button>
+    </div>
     <div class="tutorial-step-indicator">${dots}</div>
     <div class="tutorial-icon" ${step.iconStyle ? `style="${step.iconStyle}"` : ''}>${step.icon}</div>
     <div class="tutorial-title">${step.title}</div>
     <div class="tutorial-desc">${step.desc}</div>
     ${featuresHtml}
     <div class="tutorial-actions">
-      ${!step.finish ? `<button class="btn-tutorial-skip" onclick="closeTutorial()">Skip</button>` : ''}
+      ${!step.finish ? `<button class="btn-tutorial-skip" onclick="closeTutorial()">${skipText}</button>` : ''}
       <button class="btn-tutorial-next ${step.finish ? 'finish' : ''}" onclick="nextTutorialStep()">
         ${step.btn}
       </button>
