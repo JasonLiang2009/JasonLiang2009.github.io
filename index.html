@@ -2021,14 +2021,10 @@
 
   /* Translate button */
   .btn-translate {
-    position: fixed;
-    top: 16px;
-    right: 16px;
-    z-index: 500;
     background: rgba(255,255,255,0.92);
     border: none;
     border-radius: 20px;
-    padding: 6px 12px;
+    padding: 7px 14px;
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
@@ -2040,47 +2036,57 @@
     gap: 5px;
     box-shadow: 0 2px 12px rgba(26,18,8,0.12);
     backdrop-filter: blur(8px);
+    white-space: nowrap;
   }
   .btn-translate:hover { background: var(--gold); color: #fff; }
-  .btn-translate:hover #langSelect { color: #fff; }
   body.dark .btn-translate { background: rgba(30,26,20,0.92); color: #a09070; }
   body.dark .btn-translate:hover { background: var(--gold); color: #fff; }
-  #langSelect {
-    appearance: none;
-    -webkit-appearance: none;
+
+  .lang-option {
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    text-align: left;
     background: none;
     border: none;
     font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    color: inherit;
+    font-size: 13px;
+    color: #6b5a40;
     cursor: pointer;
-    outline: none;
-    padding: 0;
+    transition: background 0.15s;
+    white-space: nowrap;
   }
-  #langSelect option { background: #fff; color: #1a1208; }
-  body.dark #langSelect { color: #a09070; }
-  body.dark #langSelect option { background: #1e1a14; color: #f0e8d8; }
+  .lang-option:hover { background: rgba(201,146,42,0.1); }
+  .lang-option.active { color: var(--gold); font-weight: 700; }
+  body.dark #langDropdown { background: #1e1a14; }
+  body.dark .lang-option { color: #a09070; }
+  body.dark .lang-option:hover { background: rgba(201,146,42,0.1); }
+  body.dark .lang-option.active { color: var(--gold-light); }
 
   /* Tutorial lang toggle */
   .tutorial-lang-toggle {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 6px;
     margin-bottom: 18px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 2px;
   }
+  .tutorial-lang-toggle::-webkit-scrollbar { display: none; }
   .tutorial-lang-btn {
-    padding: 4px 14px;
+    padding: 4px 12px;
     border-radius: 14px;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 500;
     cursor: pointer;
     border: 1.5px solid rgba(201,146,42,0.3);
     background: transparent;
     color: #a09070;
     font-family: 'DM Sans', sans-serif;
     transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
   .tutorial-lang-btn.active { background: var(--gold); color: #fff; border-color: var(--gold); }
 
@@ -2089,18 +2095,7 @@
 <body>
 <div class="app">
 
-<div class="btn-translate" id="translateBtn">
-  🌐 <select id="langSelect" onchange="setUILang(this.value)" style="background:none;border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:inherit;cursor:pointer;outline:none;padding:0;">
-    <option value="en">English</option>
-    <option value="zh">中文</option>
-    <option value="es">Español</option>
-    <option value="fr">Français</option>
-    <option value="ja">日本語</option>
-    <option value="ko">한국어</option>
-    <option value="pt">Português</option>
-    <option value="ar">العربية</option>
-  </select>
-</div>
+
 
   <header>
     <div class="header-top-row">
@@ -2111,7 +2106,21 @@
       <div class="header-badge">
         <span>✦</span> AI-Powered
       </div>
-      <div class="header-top-spacer"></div>
+      <div class="header-top-spacer" style="display:flex;justify-content:flex-end;align-items:center;position:relative;">
+        <button class="btn-translate" id="translateBtn" onclick="toggleLangDropdown(event)">
+          🌐 <span id="translateLabel">English</span> ▾
+        </button>
+        <div id="langDropdown" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(26,18,8,0.15);overflow:hidden;min-width:140px;z-index:501;">
+          <button class="lang-option active" data-lang="en" onclick="setUILang('en')">🇺🇸 English</button>
+          <button class="lang-option" data-lang="zh" onclick="setUILang('zh')">🇨🇳 中文</button>
+          <button class="lang-option" data-lang="es" onclick="setUILang('es')">🇪🇸 Español</button>
+          <button class="lang-option" data-lang="fr" onclick="setUILang('fr')">🇫🇷 Français</button>
+          <button class="lang-option" data-lang="ja" onclick="setUILang('ja')">🇯🇵 日本語</button>
+          <button class="lang-option" data-lang="ko" onclick="setUILang('ko')">🇰🇷 한국어</button>
+          <button class="lang-option" data-lang="pt" onclick="setUILang('pt')">🇧🇷 Português</button>
+          <button class="lang-option" data-lang="ar" onclick="setUILang('ar')">🇸🇦 العربية</button>
+        </div>
+      </div>
     </div>
     <h1><span class="cn">汉字卡</span> · Hànzì Cards</h1>
     <p>Describe any Chinese language topic — get an instant flashcard deck</p>
@@ -3797,10 +3806,31 @@ const translations = {
   ar: { subtitle: 'صف أي موضوع باللغة الصينية — احصل على بطاقات تعليمية فورية', topicLabel: 'الموضوع أو الفئة', placeholder: 'مثل "الطلب في المطعم"، "مفردات HSK"…', generateBtn: '生成 توليد', quickLabel: '⚡ توليد سريع حسب المستوى', levels: ['مبتدئ','أساسي','متوسط','متقدم','طليق','محترف'], pinyinLabel: 'بينيين', darkLabel: '🌙 داكن', lightLabel: '☀️ فاتح', cardsLabel: 'عدد البطاقات:', gotIt: '✓ فهمت', reviewAgain: '↺ مراجعة', flipHint: 'انقر للقلب', recentDecks: 'المجموعات الأخيرة' },
 };
 
+function toggleLangDropdown(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('langDropdown');
+  if (dd) dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', () => {
+  const dd = document.getElementById('langDropdown');
+  if (dd) dd.style.display = 'none';
+});
+
 function setUILang(lang) {
   uiLang = lang;
+  // Update active state in dropdown
+  document.querySelectorAll('.lang-option').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === lang);
+  });
+  // Update button label
+  const names = { en:'English', zh:'中文', es:'Español', fr:'Français', ja:'日本語', ko:'한국어', pt:'Português', ar:'العربية' };
+  const label = document.getElementById('translateLabel');
+  if (label) label.textContent = names[lang] || lang;
+  // Close dropdown
+  const dd = document.getElementById('langDropdown');
+  if (dd) dd.style.display = 'none';
   applyTranslation();
-  // Sync tutorial lang too
   tutorialLang = lang;
   renderTutorialLangToggle();
 }
@@ -3901,7 +3931,7 @@ function showTutorial() {
 
 let tutorialLang = 'en';
 
-const langNames = { en:'EN', zh:'中文', es:'ES', fr:'FR', ja:'日本語', ko:'한국어', pt:'PT', ar:'AR' };
+const langNames = { en:'🇺🇸 English', zh:'🇨🇳 中文', es:'🇪🇸 Español', fr:'🇫🇷 Français', ja:'🇯🇵 日本語', ko:'🇰🇷 한국어', pt:'🇧🇷 Português', ar:'🇸🇦 العربية' };
 
 function renderTutorialLangToggle() {
   const el = document.getElementById('tutorialLangToggle');
